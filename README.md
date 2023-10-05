@@ -4,7 +4,9 @@
 [![codecov](https://codecov.io/gh/LSSTDESC/pz-rail-tpz/branch/main/graph/badge.svg)](https://codecov.io/gh/LSSTDESC/pz-rail-tpz)
 [![PyPI](https://img.shields.io/pypi/v/rail_tpz?color=blue&logo=pypi&logoColor=white)](https://pypi.org/project/rail_tpz/)
 
-TODO - add more about your project here.
+"Lite" version of Matias Carrasco-Kind's TPZ (Trees for Photo-z) regression-tree-based photo-z code.  This initial version **only** implements the regression-tree mode, it does not implement the classification tree or SOM-based photo-z estimators.
+
+For the regression tree mode, the current implementation includes generation of "random" data via Gaussian scatter on each of the attributes that contain an uncertainty, but it does **not** implement the out-of-bag error or varImportance sampling that are included in the full MLZ/TPZ package.
 
 ## RAIL: Redshift Assessment Infrastructure Layers
 
