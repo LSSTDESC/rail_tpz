@@ -15,7 +15,12 @@ classifiers = [
 ]
 dynamic = ["version"]
 
-dependencies = []
+dependencies = [
+    "astropy",
+    "pandas",
+    "pz-rail-base",
+    "qp-prob[full]",
+]
 
 # On a mac, install optional dependencies with `pip install '.[dev]'` (include the single quotes)
 [project.optional-dependencies]
