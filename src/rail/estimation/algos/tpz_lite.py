@@ -95,6 +95,7 @@ class TPZliteInformer(CatInformer):
                           bands=SHARED_PARAMS,
                           err_bands=SHARED_PARAMS,
                           redshift_col=SHARED_PARAMS,
+                          seed=Param(int, 8758, msg="random seed"),
                           use_atts=Param(list, def_train_atts,
                                          msg="attributes to use in training trees"),
                           err_dict=Param(dict, def_err_dict, msg="dictionary that contains the columns that will be used to \
@@ -118,6 +119,8 @@ class TPZliteInformer(CatInformer):
     def run(self):
         """compute the best fit prior parameters
         """
+        rng = np.random.default_rng(seed=self.config.seed)
+        
         if self.config.hdf5_groupname:
             training_data = self.get_data("input")[self.config.hdf5_groupname]
         else:  # pragma: no cover

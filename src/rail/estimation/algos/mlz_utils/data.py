@@ -115,7 +115,8 @@ def create_random_realizations(AT, F, N, keyatt):
             sigg = max(0.001, sigg)
             sigg = min(sigg, 0.3)
             if AT[k]['eind'] == -1: sigg = 0.00005
-            BigCat[k][i] = np.random.normal(F[i][AT[k]['ind']], sigg, N)
+            # BigCat[k][i] = np.random.normal(F[i][AT[k]['ind']], sigg, N)
+            BigCat[k][i] = self.rng.normal(F[i][AT[k]['ind']], sigg, N)
     return BigCat
 
 
@@ -181,7 +182,7 @@ class catalog():
     :param int L2: keep only entries between L1 and L2
     """
 
-    def __init__(self, Pars, npdata, datacols, use_atts, att_dict):
+    def __init__(self, Pars, npdata, datacols, use_atts, att_dict, rng=None):
         self.Pars = Pars
         self.cols = datacols
         self.atts = use_atts
@@ -196,6 +197,10 @@ class catalog():
         self.ndim = len(self.atts)
         self.has_random = False
         self.oob = 'no'
+        if rng==None:
+            self.rng = np.random.default_rng()
+        else:
+            self.rng = rng
 
     def has_X(self):
         """
