@@ -90,7 +90,7 @@ def read_catalog(filename, myrank=0, check='no', get_ng='no', L_1=0, L_2=-1, A_T
     return filein
 
 
-def create_random_realizations(AT, F, N, keyatt):
+def create_random_realizations(AT, F, N, keyatt, rng=None):
     """
     Create random realizations using error in magnitudes,
     saves a temporarily file on train data directory.
@@ -105,6 +105,8 @@ def create_random_realizations(AT, F, N, keyatt):
     :param str keyatt: Attribute name to be predicted or classifed
     :return: Returns  an array with random realizations
     """
+    if rng==None:
+        rng = np.random.default_rng()
     BigCat = {}
     total = len(F)
     for key in AT.keys():
@@ -116,7 +118,7 @@ def create_random_realizations(AT, F, N, keyatt):
             sigg = min(sigg, 0.3)
             if AT[k]['eind'] == -1: sigg = 0.00005
             # BigCat[k][i] = np.random.normal(F[i][AT[k]['ind']], sigg, N)
-            BigCat[k][i] = self.rng.normal(F[i][AT[k]['ind']], sigg, N)
+            BigCat[k][i] = rng.normal(F[i][AT[k]['ind']], sigg, N)
     return BigCat
 
 
@@ -268,7 +270,7 @@ class catalog():
         """
         if ntimes == -1: ntimes = int(self.Pars.nrandom)
         # if outfileran == '': outfileran = self.Pars.randomcatname
-        self.BigRan = create_random_realizations(self.AT, self.cat, ntimes, self.Pars.keyatt)
+        self.BigRan = create_random_realizations(self.AT, self.cat, ntimes, self.Pars.keyatt, self.rng)
         # remove the saving of the data
         # np.save(self.Pars.path_train + outfileran, self.BigRan)
         self.has_random = True
