@@ -246,7 +246,7 @@ class TPZliteEstimator(CatEstimator):
 
         if Test.has_Y():
             yvals = Test.Y
-        else:
+        else:  # pragma: no cover
             yvals = np.zeros(Test.nobj)
 
         Z0 = np.zeros((Test.nobj, 7))
@@ -273,6 +273,12 @@ class TPZliteEstimator(CatEstimator):
             BP0[k, :] = pdf_phot
         del BP0raw, yvals
 
+        zgrid = np.linspace(self.attPars.zmin,
+                            self.attPars.zmax,
+                            self.attPars.nzbins)
+        
         qp_dstn = qp.Ensemble(qp.interp, data=dict(xvals=zfine2, yvals=BP0))
-        # qp_dstn.set_ancil(dict(zmode=zmode, zmean=zmean, tb=tb, todds=todds))
+        zmode = qp_dstn.mode(grid=zgrid)
+
+        qp_dstn.set_ancil(dict(zmode=zmode))
         self._do_chunk_output(qp_dstn, start, end, first)

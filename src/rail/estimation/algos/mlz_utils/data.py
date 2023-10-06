@@ -233,7 +233,7 @@ class catalog():
         self.boot = bootstrap
         if curr_at == 'all':
             self.curr_at = self.atts
-        else:
+        else:  # pragma: no cover
             self.curr_at = curr_at['atts']
         indx = []
         for key in self.curr_at:
@@ -268,13 +268,13 @@ class catalog():
         # np.save(self.Pars.path_train + outfileran, self.BigRan)
         self.has_random = True
 
-    def load_random(self):
-        """
-        Loads the random catalog with the realizations
-        """
-        Junk = np.load(self.Pars.path_train + self.Pars.randomcatname + '.npy', allow_pickle=True)
-        self.BigRan = Junk.item()
-        del Junk
+    # def load_random(self):
+    #    """
+    #    Loads the random catalog with the realizations
+    #    """
+    #    Junk = np.load(self.Pars.path_train + self.Pars.randomcatname + '.npy', allow_pickle=True)
+    #    self.BigRan = Junk.item()
+    #    del Junk
 
     def newcat(self, i):
         self.cat = copy.deepcopy(self.cat_or)
