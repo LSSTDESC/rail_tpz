@@ -259,6 +259,7 @@ class TPZliteEstimator(CatEstimator):
 
         # Load trees
         alltreedict = self.model["treedict"]
+        print(f"loading {ntot} total trees from model")
         for k in range(ntot):
 
             S = alltreedict[f"tree_{k}"]
