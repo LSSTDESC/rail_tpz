@@ -6,12 +6,6 @@ from rail.core.utils import RAILDIR
 from rail.estimation.algos.tpz_lite import TPZliteInformer, TPZliteEstimator
 
 
-traindata = os.path.join(RAILDIR, "rail/examples_data/testdata/training_100gal.hdf5")
-validdata = os.path.join(RAILDIR, "rail/examples_data/testdata/validation_10gal.hdf5")
-DS = RailStage.data_store
-DS.__class__.allow_overwrite = True
-
-
 def test_tpz():
     train_config_dict = {"hdf5_groupname": "photometry", "nrandom": 2, "ntrees": 2,
                          "model": "tpz_tests.pkl"}
