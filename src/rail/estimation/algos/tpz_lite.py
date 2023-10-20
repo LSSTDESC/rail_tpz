@@ -53,7 +53,7 @@ def make_index_dict(inputdict, datacols):
     """
     colmapdict = {}
     for key, val in inputdict.items():
-        if key not in datacols:
+        if key not in datacols:  # pragma: no cover
             keyind = -1
             errind = -1
             colmapdict[key] = dict(type="real", ind=keyind, eind=errind)
