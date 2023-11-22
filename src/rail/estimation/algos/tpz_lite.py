@@ -25,6 +25,22 @@ from .mlz_utils import utils_mlz
 from .mlz_utils import analysis
 from .ml_codes import TPZ
 
+try:
+    from mpi4py import MPI
+
+    PLL = 'MPI'
+except ImportError:
+    PLL = 'SERIAL'
+
+if PLL == 'MPI':
+    comm = MPI.COMM_WORLD
+    size = comm.Get_size()
+    rank = comm.Get_rank()
+else:
+    size = 1
+    rank = 0
+Nproc = size
+
 bands = ['u', 'g', 'r', 'i', 'z', 'y']
 def_train_atts = []
 for band in bands:
@@ -120,6 +136,9 @@ class TPZliteInformer(CatInformer):
         """compute the best fit prior parameters
         """
         rng = np.random.default_rng(seed=self.config.seed)
+        comm.Barrier()
+        if rank == 0:
+            print(f"PLL IS {PLL}, number of processors we will use is {size}")
         
         if self.config.hdf5_groupname:
             training_data = self.get_data("input")[self.config.hdf5_groupname]
@@ -145,27 +164,47 @@ class TPZliteInformer(CatInformer):
 
         # construct the attribute dictionary
         train_att_dict = make_index_dict(self.config.err_dict, trainkeys)
-
         traindata = data.catalog(self.config, npdata.T, trainkeys, self.config.use_atts, train_att_dict)
-
         #####
         # make random data
         # So make_random takes the error columns and just adds Gaussian scatter to the input (or 0.00005 if no error supplied)
         # it saves `nrandom` copies of this in a dictionary for each attribute for each galaxy
         # not how I would have done things, but we're keeping it to try to duplicate MLZ's code exactly.
         if self.config.nrandom > 1:
-            print(f"creating {self.config.nrandom} random realizations...")
-            traindata.make_random(ntimes=int(self.config.nrandom))
+            if rank == 0:
+                print(f"creating {self.config.nrandom} random realizations...")
+                traindata.make_random(ntimes=int(self.config.nrandom))
+                temprandos = traindata.BigRan
+            else:
+                temprandos = None
+        if PLL == 'MPI': comm.Barrier()
+
+        # Matias writes out randoms from make_random for rank=0, then reads them all back in from file so that all ranks have access,
+        # that seems slow so, instead, let's just assign them here (after broadcasting to all):
+        temprandos = comm.bcast(temprandos, root=0)
+        if self.config.nrandom > 1:
+            traindata.BigRan = temprandos
+        if PLL == 'MPI': comm.Barrier()
 
         ntot = int(self.config.nrandom * self.config.ntrees)
-        print(f"making a total of {ntot} trees for {self.config.nrandom} random realizations * {self.config.ntrees} bootstraps")
+        if rank == 0:
+            print(f"making a total of {ntot} trees for {self.config.nrandom} random realizations * {self.config.ntrees} bootstraps")
 
         zfine, zfine2, resz, resz2, wzin = analysis.get_zbins(self.config)
         zfine2 = zfine2[wzin]
 
+        s0, s1 = utils_mlz.get_limits(ntot, Nproc, rank)
+        if rank == 0:
+            for i in range(Nproc):
+                Xs_0, Xs_1 = utils_mlz.get_limits(ntot, Nproc, i)
+                if Xs_0==Xs_1 :
+                    print(f"idle...  -------------> to core  {i}")
+                else:
+                    print(f"{Xs_0} - {Xs_1} -------------> to core {i}")
+
         treedict = {}
         # copy some stuff from the runMLZ script:
-        for kss in range(ntot):
+        for kss in range(s0, s1):
             print(f"making {kss+1} of {ntot}...")
             if self.config.nrandom > 1:
                 ir = kss // int(self.config.ntrees)
@@ -180,23 +219,25 @@ class TPZliteInformer(CatInformer):
 
             treedict[f"tree_{kss}"] = T
 
-        self.model = dict(trainkeys=trainkeys,
-                          treedict=treedict,
-                          use_atts=self.config.use_atts,
-                          zmin=self.config.zmin,
-                          zmax=self.config.zmax,
-                          nzbins=self.config.nzbins,
-                          att_dict=train_att_dict,
-                          keyatt=self.config.keyatt,
-                          nrandom=self.config.nrandom,
-                          ntrees=self.config.ntrees,
-                          minleaf=self.config.minleaf,
-                          natt=self.config.natt,
-                          sigmafactor=self.config.sigmafactor,
-                          bands=self.config.bands,
-                          rmsfactor=self.config.rmsfactor
-                          )
-        self.add_data("model", self.model)
+        if PLL == 'MPI': comm.Barrier()
+        if rank == 0:
+            self.model = dict(trainkeys=trainkeys,
+                              treedict=treedict,
+                              use_atts=self.config.use_atts,
+                              zmin=self.config.zmin,
+                              zmax=self.config.zmax,
+                              nzbins=self.config.nzbins,
+                              att_dict=train_att_dict,
+                              keyatt=self.config.keyatt,
+                              nrandom=self.config.nrandom,
+                              ntrees=self.config.ntrees,
+                              minleaf=self.config.minleaf,
+                              natt=self.config.natt,
+                              sigmafactor=self.config.sigmafactor,
+                              bands=self.config.bands,
+                              rmsfactor=self.config.rmsfactor
+                              )
+            self.add_data("model", self.model)
 
 
 class objfromdict(object):
