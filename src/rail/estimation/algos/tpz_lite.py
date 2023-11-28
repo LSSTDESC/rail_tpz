@@ -203,6 +203,7 @@ class TPZliteInformer(CatInformer):
                     print(f"{Xs_0} - {Xs_1} -------------> to core {i}")
 
         treedict = {}
+        if PLL == 'MPI': comm.Barrier()
         # copy some stuff from the runMLZ script:
         for kss in range(s0, s1):
             print(f"making {kss+1} of {ntot}...")
@@ -218,6 +219,12 @@ class TPZliteInformer(CatInformer):
                           dict_dim=DD)
 
             treedict[f"tree_{kss}"] = T
+            if rank == 0:
+                treedat = comm.recv(source=i, tag=11)
+                for key in treedat:
+                    treedict[key] = treedat[key]
+            else:
+                comm.send(treedict, dest=0, tag=11)
 
         if PLL == 'MPI': comm.Barrier()
         if rank == 0:
