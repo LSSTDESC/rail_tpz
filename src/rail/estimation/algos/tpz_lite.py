@@ -219,13 +219,19 @@ class TPZliteInformer(CatInformer):
                           dict_dim=DD)
 
             treedict[f"tree_{kss}"] = T
-            if PLL == 'MPI':
-                if rank == 0:
-                    treedat = comm.recv(source=i, tag=11)
-                    for key in treedat:
-                        treedict[key] = treedat[key]
-                else:
-                    comm.send(treedict, dest=0, tag=11)
+
+        if PLL == 'MPI':
+           if rank == 0:
+               for i in range(1, size, 1):
+                   print(f"receiving data from rank {i}")
+                   xdata = comm.recv(source=i, tag=11)
+                   for key in xdata:
+                       treedict[key] = xdata[key]
+           else:
+               xdata = treedict.copy()
+               comm.send(xdata, dest=0, tag=11)
+
+
 
         if PLL == 'MPI': comm.Barrier()
         if rank == 0:
