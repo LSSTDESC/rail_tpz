@@ -16,6 +16,7 @@ Missing from full TPZ:
 
 import numpy as np
 import qp
+from sklearn.tree import DecisionTreeRegressor
 from ceci.config import StageParameter as Param
 from rail.estimation.estimator import CatEstimator, CatInformer
 from rail.core.common_params import SHARED_PARAMS
@@ -122,7 +123,10 @@ class TPZliteInformer(CatInformer):
                           minleaf=Param(int, 5, msg="minimum number in terminal leaf"),
                           natt=Param(int, 3, msg="number of attributes to split for TPZ"),
                           sigmafactor=Param(float, 3.0, msg="Gaussian smoothing with kernel Sigma1*Resolution"),
-                          rmsfactor=Param(float, 0.02, msg="RMS for zconf calculation")
+                          rmsfactor=Param(float, 0.02, msg="RMS for zconf calculation"),
+                          tree_strategey=Param(str, "native", msg="which decision tree function to use when constructing the forest, \
+                                              valid choices are 'native' or 'sklearn'.  If 'native', use the trees written for TPZ,\
+                                              if 'sklearn' then use sklearn's DecisionTreeRegressor")
                           )
 
     def __init__(self, args, comm=None):
@@ -139,11 +143,19 @@ class TPZliteInformer(CatInformer):
         comm.Barrier()
         if rank == 0:
             print(f"PLL IS {PLL}, number of processors we will use is {size}")
-        
+
         if self.config.hdf5_groupname:
             training_data = self.get_data("input")[self.config.hdf5_groupname]
         else:  # pragma: no cover
             training_data = self.get_data("input")
+
+        valid_strategies = ["sklearn", "native"]
+        if self.config.tree_strategy not in valid_strategies:
+            raise ValueError(f"value of {self.config.tree_strategy} not valid! Valid values for tree_strategy are 'native' or 'sklearn'")
+        if self.config.tree_strategy == "sklearn" and rank == 0:
+            print("using sklearn decision trees")
+        if self.config.tree_strategy == "native" and rank == 0:
+            print("using native TPZ decision trees")
 
         # TPZ expects a param called `keyatt` that is just the redshift column, copy redshift_col
         self.config.keyatt = self.config.redshift_col
@@ -197,7 +209,7 @@ class TPZliteInformer(CatInformer):
         if rank == 0:
             for i in range(Nproc):
                 Xs_0, Xs_1 = utils_mlz.get_limits(ntot, Nproc, i)
-                if Xs_0==Xs_1 :
+                if Xs_0 == Xs_1:
                     print(f"idle...  -------------> to core  {i}")
                 else:
                     print(f"{Xs_0} - {Xs_1} -------------> to core {i}")
@@ -214,24 +226,31 @@ class TPZliteInformer(CatInformer):
             DD = 'all'
 
             traindata.get_XY(bootstrap='yes', curr_at=DD)
-            T = TPZ.Rtree(traindata.X, traindata.Y, forest='yes',
-                          minleaf=int(self.config.minleaf), mstar=int(self.config.natt),
-                          dict_dim=DD)
+            if self.config.tree_strategy == "native":
+                T = TPZ.Rtree(traindata.X, traindata.Y, forest='yes',
+                              minleaf=int(self.config.minleaf), mstar=int(self.config.natt),
+                              dict_dim=DD)
+            elif self.config.tree_strategy == "sklearn":
+                randx = rng.integers(low=0, high=25000, size=1)[0]
+                T = DecisionTreeRegressor(random_state=randx,
+                                          min_samples_leaf=self.config.minleaf,
+                                          max_features=int(self.config.natt))
+                T.fit(traindata.X, traindata.Y)
+            else:  # pragma: no cover  already tested above
+                raise ValueError("invalid value for tree_strategy")
 
             treedict[f"tree_{kss}"] = T
 
         if PLL == 'MPI':
-           if rank == 0:
-               for i in range(1, size, 1):
-                   print(f"receiving data from rank {i}")
-                   xdata = comm.recv(source=i, tag=11)
-                   for key in xdata:
-                       treedict[key] = xdata[key]
-           else:
-               xdata = treedict.copy()
-               comm.send(xdata, dest=0, tag=11)
-
-
+            if rank == 0:
+                for i in range(1, size, 1):
+                    print(f"receiving data from rank {i}")
+                    xdata = comm.recv(source=i, tag=11)
+                    for key in xdata:
+                        treedict[key] = xdata[key]
+            else:
+                xdata = treedict.copy()
+                comm.send(xdata, dest=0, tag=11)
 
         if PLL == 'MPI': comm.Barrier()
         if rank == 0:
@@ -249,7 +268,8 @@ class TPZliteInformer(CatInformer):
                               natt=self.config.natt,
                               sigmafactor=self.config.sigmafactor,
                               bands=self.config.bands,
-                              rmsfactor=self.config.rmsfactor
+                              rmsfactor=self.config.rmsfactor,
+                              tree_strategy=self.config.tree_strategy
                               )
             self.add_data("model", self.model)
 
@@ -322,7 +342,10 @@ class TPZliteEstimator(CatEstimator):
 
             # Loop over all objects
             for i in range(Test.nobj):
-                temp = S.get_vals(Test.X[i])
+                if self.attPars.tree_strategy == "native":
+                    temp = S.get_vals(Test.X[i])
+                else:
+                    temp = S.predict(Test.X[i].reshape(1, -1))
                 if temp[0] != -1.:
                     BP0raw[i, :] += Test_S.get_hist(temp)
 
@@ -335,7 +358,7 @@ class TPZliteEstimator(CatEstimator):
         zgrid = np.linspace(self.attPars.zmin,
                             self.attPars.zmax,
                             self.attPars.nzbins)
-        
+
         qp_dstn = qp.Ensemble(qp.interp, data=dict(xvals=zfine2, yvals=BP0))
         zmode = qp_dstn.mode(grid=zgrid)
 
