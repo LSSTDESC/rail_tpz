@@ -30,14 +30,14 @@ try:
     from mpi4py import MPI
 
     PLL = 'MPI'
-except ImportError:
+except ImportError:  # pragma: no cover
     PLL = 'SERIAL'
 
 if PLL == 'MPI':
     comm = MPI.COMM_WORLD
     size = comm.Get_size()
     rank = comm.Get_rank()
-else:
+else:  # pragma: no cover
     size = 1
     rank = 0
 Nproc = size
@@ -150,7 +150,7 @@ class TPZliteInformer(CatInformer):
             training_data = self.get_data("input")
 
         valid_strategies = ["sklearn", "native"]
-        if self.config.tree_strategy not in valid_strategies:
+        if self.config.tree_strategy not in valid_strategies:  # pragma: no cover
             raise ValueError(f"value of {self.config.tree_strategy} not valid! Valid values for tree_strategy are 'native' or 'sklearn'")
         if self.config.tree_strategy == "sklearn" and rank == 0:
             print("using sklearn decision trees")
@@ -187,7 +187,7 @@ class TPZliteInformer(CatInformer):
                 print(f"creating {self.config.nrandom} random realizations...")
                 traindata.make_random(ntimes=int(self.config.nrandom))
                 temprandos = traindata.BigRan
-            else:
+            else:  # pragma: no cover
                 temprandos = None
         if PLL == 'MPI': comm.Barrier()
 
@@ -209,7 +209,7 @@ class TPZliteInformer(CatInformer):
         if rank == 0:
             for i in range(Nproc):
                 Xs_0, Xs_1 = utils_mlz.get_limits(ntot, Nproc, i)
-                if Xs_0 == Xs_1:
+                if Xs_0 == Xs_1:  # pragma: no cover
                     print(f"idle...  -------------> to core  {i}")
                 else:
                     print(f"{Xs_0} - {Xs_1} -------------> to core {i}")
