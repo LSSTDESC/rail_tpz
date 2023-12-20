@@ -152,3 +152,24 @@ def compute_zConf2(z, pdf, zv, sigma):
     ib1 = np.argmin(abs(z1a - z))
     ib2 = np.argmin(abs(z1b - z)) + 1
     return sum(pdf[ib1:ib2])
+
+
+def get_limits(ntot, Nproc, rank):
+    """
+    Get limits for farming an array to multiple processors
+
+    :param int ntot: Number of objects in array
+    :param int Nproc: number of processor
+    :param int rank: current processor id
+    :return: L1,L2 the limits of the array for given processor
+    :rtype: int, int
+    """
+    jpproc = np.zeros(Nproc) + int(ntot / Nproc)
+    for i in range(Nproc):
+        if (i < ntot % Nproc): jpproc[i] += 1
+    jpproc = [int(x) for x in jpproc]
+    st = rank
+    st = np.sum(jpproc[:rank]) - 1
+    s0 = int(st + 1)
+    s1 = int(st + jpproc[rank]) + 1
+    return s0, s1
