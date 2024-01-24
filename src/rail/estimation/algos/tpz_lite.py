@@ -148,7 +148,8 @@ class TPZliteInformer(CatInformer):
         """compute the best fit prior parameters
         """
         rng = np.random.default_rng(seed=self.config.seed)
-        self._comm.Barrier()
+        if self._parallel == MPI_PARALLEL:
+            self._comm.Barrier()
         if self._rank == 0:
             print(f"self._parallel is {self._parallel}, number of processors we will use is {self._size}")
 
@@ -217,7 +218,8 @@ class TPZliteInformer(CatInformer):
 
         # Matias writes out randoms from make_random for rank=0, then reads them all back in from file so that all ranks have access,
         # that seems slow so, instead, let's just assign them here (after broadcasting to all):
-        temprandos = self._comm.bcast(temprandos, root=0)
+        if self._parallel == MPI_PARALLEL:
+            temprandos = self._comm.bcast(temprandos, root=0)
         if self.config.nrandom > 1:
             traindata.BigRan = temprandos
         if self._parallel == MPI_PARALLEL:
