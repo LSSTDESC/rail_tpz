@@ -132,7 +132,7 @@ class TPZliteInformer(CatInformer):
                           natt=Param(int, 3, msg="number of attributes to split for TPZ"),
                           sigmafactor=Param(float, 3.0, msg="Gaussian smoothing with kernel Sigma1*Resolution"),
                           rmsfactor=Param(float, 0.02, msg="RMS for zconf calculation"),
-                          tree_strategey=Param(str, "native", msg="which decision tree function to use when constructing the forest, \
+                          tree_strategy=Param(str, "native", msg="which decision tree function to use when constructing the forest, \
                                               valid choices are 'native' or 'sklearn'.  If 'native', use the trees written for TPZ,\
                                               if 'sklearn' then use sklearn's DecisionTreeRegressor")
                           )
