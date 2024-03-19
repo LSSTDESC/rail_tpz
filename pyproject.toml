@@ -17,9 +17,11 @@ dynamic = ["version"]
 
 dependencies = [
     "astropy",
+    "mpi4py",
     "pandas",
     "pz-rail-base",
     "qp-prob[full]",
+    "scikit-learn",
 ]
 
 # On a mac, install optional dependencies with `pip install '.[dev]'` (include the single quotes)
