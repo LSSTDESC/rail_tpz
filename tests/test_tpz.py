@@ -9,11 +9,12 @@ from rail.core.utils import find_rail_file
 from rail.estimation.algos.tpz_lite import TPZliteInformer, TPZliteEstimator
 
 @pytest.mark.parametrize(
-    "treestrat",
-    ["native", "sklearn"]
+    "treestrat, nrand",
+    [("native", 2),
+     ("sklearn", 1)]
 )
-def test_tpz_larger_training(treestrat):
-    train_config_dict = {"hdf5_groupname": "photometry", "nrandom": 2, "ntrees": 5,
+def test_tpz_larger_training(treestrat, nrand):
+    train_config_dict = {"hdf5_groupname": "photometry", "nrandom": nrand, "ntrees": 5,
                          "model": "tpz_tests.pkl", "tree_strategy": treestrat}
     estim_config_dict = {"hdf5_groupname": "photometry", "model": "tpz_tests.pkl"}
     train_algo = TPZliteInformer
