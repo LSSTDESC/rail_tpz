@@ -219,7 +219,8 @@ class TPZliteInformer(CatInformer):
         # Matias writes out randoms from make_random for rank=0, then reads them all back in from file so that all ranks have access,
         # that seems slow so, instead, let's just assign them here (after broadcasting to all):
         if self._parallel == MPI_PARALLEL:
-            temprandos = self._comm.bcast(temprandos, root=0)
+            if self.config.nrandom > 1:
+                temprandos = self._comm.bcast(temprandos, root=0)
         if self.config.nrandom > 1:
             traindata.BigRan = temprandos
         if self._parallel == MPI_PARALLEL:
