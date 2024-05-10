@@ -5,7 +5,7 @@ from rail.core.stage import RailStage
 from rail.utils.testing_utils import one_algo
 from rail.core.data import TableHandle
 from rail.utils.path_utils import RAILDIR
-from rail.core.utils import find_rail_file
+from rail.utils.path_utils import find_rail_file
 from rail.estimation.algos.tpz_lite import TPZliteInformer, TPZliteEstimator
 
 @pytest.mark.parametrize(
