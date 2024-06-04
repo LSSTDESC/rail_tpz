@@ -1,5 +1,6 @@
 [project]
 name = "pz-rail-tpz"
+requires-python = ">=3.9"
 license = {file = "LICENSE"}
 readme = "README.md"
 authors = [
@@ -42,11 +43,6 @@ build-backend = "setuptools.build_meta"
 
 [tool.setuptools_scm]
 write_to = "src/rail/rail_tpz/_version.py"
-
-[tool.setuptools.packages.find]
-where = ["src"]
-include = ["rail"]
-namespaces = true
 
 [tool.pytest.ini_options]
 testpaths = [
