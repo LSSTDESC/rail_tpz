@@ -18,6 +18,10 @@ jobs:
       uses: actions/setup-python@v4
       with:
         python-version: '3.11'
+    - name: setup mpi
+      uses: mpi4py/setup-mpi@v1
+      with:
+        mpi: openmpi
     - name: Install dependencies
       run: |
         sudo apt-get update
