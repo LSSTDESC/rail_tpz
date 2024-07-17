@@ -137,10 +137,10 @@ class TPZliteInformer(CatInformer):
                                               if 'sklearn' then use sklearn's DecisionTreeRegressor")
                           )
 
-    def __init__(self, args, comm=None):
+    def __init__(self, args, **kwargs):
         """Init function, init config stuff
         """
-        CatInformer.__init__(self, args, comm=comm)
+        super().__init__(args, **kwargs)
         self.szs = None
         self.treedata = None
 
@@ -327,10 +327,10 @@ class TPZliteEstimator(CatEstimator):
                                          predict as the keys and the errors associated with that column as the values. \
                                          If a column does not havea an associated error its value shoule be `None`"))
 
-    def __init__(self, args, comm=None):
+    def __init__(self, args, **kwargs):
         """Constructor, build the CatEstimator, then do BPZ specific setup
         """
-        CatEstimator.__init__(self, args, comm=comm)
+        super().__init__(args, **kwargs)
 
     def open_model(self, **kwargs):
         CatEstimator.open_model(self, **kwargs)
