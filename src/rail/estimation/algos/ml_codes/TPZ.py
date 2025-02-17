@@ -393,8 +393,6 @@ class Rtree():
     :param dict_dim: dictionary with attributes names
     :type dict_dim: dict
 
-    .. literalinclude:: testf.py
-        :linenos:
     """
 
     def __init__(self, X, Y, minleaf=4, forest='yes', mstar=2, dict_dim=''):
@@ -454,8 +452,8 @@ class Rtree():
         Get the branch in string format given a line search, where the line
         is a vector of attributes per individual object
 
-        :param float line: input data line to look in the tree, 
-        same dimensions as input X
+        :param float line: input data line to look in the tree, same dimensions as input X
+
         :returns: str -- branch array in string format, ex., ['L','L','R']
         """
         return search_B(line, self.root, SB=[])
@@ -465,8 +463,8 @@ class Rtree():
         Get the predictions  given a line search, where the line
         is a vector of attributes per individual object
 
-        :param float line: input data line to look in the tree, 
-        same dimensions as input X
+        :param float line: input data line to look in the tree, same dimensions as input X
+
         :returns: float -- array with the leaf content
         """
         out = search(line, self.root)

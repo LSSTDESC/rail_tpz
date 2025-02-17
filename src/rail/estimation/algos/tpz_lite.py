@@ -68,13 +68,15 @@ def make_index_dict(inputdict, datacols):
     spectroscopic redshift, then it should have `None` in the input dict, and
     will assign -1 as the column index.  If a column is not in the input data
     ind and eind of -1 will both be assigned a value of -1
+
     Parameters
     ----------
     inputdict: dict
-      dictionary consisting of keys with names of input column and value that is
-      the value of the associated error name
+        dictionary consisting of keys with names of input column and value that is
+        the value of the associated error name
+
     datacols: list
-      the list of column names in the input data
+        the list of column names in the input data
     """
     colmapdict = {}
     for key, val in inputdict.items():

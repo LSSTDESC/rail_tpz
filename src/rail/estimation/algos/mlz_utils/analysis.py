@@ -30,7 +30,7 @@ class GetPz():
 
     :param dict dict_zp: Dictionary with predicted values, keys are object index
     :param int nobj: Number of objetcs
-    :param class Pars: class Pars with information taken from the :ref:`input-file`
+    :param class Pars: class Pars with information taken from the `input-file`
     """
 
     def __init__(self, dict_zp, nobj, Pars):
@@ -125,7 +125,7 @@ class GetPz_short():
 
     :param dict dict_zp: Dictionary with predicted values, keys are object index
     :param int nobj: Number of objetcs
-    :param class Pars: class Pars with information taken from the :ref:`input-file`
+    :param class Pars: class Pars with information taken from the `input-file`
     """
 
     def __init__(self, Pars):
