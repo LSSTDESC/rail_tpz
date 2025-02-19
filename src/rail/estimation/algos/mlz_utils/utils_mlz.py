@@ -7,7 +7,7 @@ import numpy as np
 import time
 import sys, os
 from scipy.interpolate import interp1d as spl
-from scipy.integrate import romberg as rom
+from scipy.integrate import quad
 
 try:
     from mpi4py import MPI
@@ -79,7 +79,7 @@ def compute_error(z, pdf, zv):
         j += 1
         za = zv - res * j
         zb = zv + res * j
-        area = rom(PP, za, zb, tol=1.0e-04, rtol=1.0e-04) / dz
+        area = quad(PP, za, zb, tol=1.0e-04, rtol=1.0e-04) / dz
     return j * res
 
 
@@ -96,7 +96,7 @@ def compute_error2(z, pdf, zv):
     while abs(area - 0.68) > eps:
         za2 = zv - LM
         zb2 = zv + LM
-        area = rom(PP, za2, zb2, tol=1.0e-04, rtol=1.0e-04) / dz
+        area = quad(PP, za2, zb2, tol=1.0e-04, rtol=1.0e-04) / dz
         Lreturn = LM
         if area > 0.68:
             L2 = LM
