@@ -33,21 +33,21 @@ MPI_PARALLEL = "mpi"
 # this is handled internally by ceci's stage.py in PipelineStage
 # replace rank with self._rank, size with self._size, comm with self._comm
 # and PLL == 'MPI'  with self._parallel == 'mpi'
-#try:
+# try:
 #    from mpi4py import MPI
 #
 #    PLL = 'MPI'
-#except ImportError:  # pragma: no cover
+# except ImportError:  # pragma: no cover
 #    PLL = 'SERIAL'
 #
-#if PLL == 'MPI':
+# if PLL == 'MPI':
 #    comm = MPI.COMM_WORLD
 #    size = comm.Get_size()
 #    rank = comm.Get_rank()
-#else:  # pragma: no cover
+# else:  # pragma: no cover
 #    size = 1
 #    rank = 0
-#Nproc = size
+# Nproc = size
 
 
 bands = ['u', 'g', 'r', 'i', 'z', 'y']
@@ -123,8 +123,8 @@ class TPZliteInformer(CatInformer):
                           err_bands=SHARED_PARAMS,
                           redshift_col=SHARED_PARAMS,
                           seed=Param(int, 8758, msg="random seed"),
-                          use_atts=Param(list, def_train_atts,
-                                         msg="attributes to use in training trees"),
+                          # use_atts=Param(list, def_train_atts,
+                          #               msg="attributes to use in training trees"),
                           err_dict=Param(dict, def_err_dict, msg="dictionary that contains the columns that will be used to \
                                          predict as the keys and the errors associated with that column as the values. \
                                          If a column does not havea an associated error its value shoule be `None`"),
@@ -185,13 +185,26 @@ class TPZliteInformer(CatInformer):
 
         # TPZ expects a param called `keyatt` that is just the redshift column, copy redshift_col
         self.config.keyatt = self.config.redshift_col
+        # Remove use_atts.  We will instead set use_atts to be the values in `bands`
+        # via the self.config.atts parameter
         # same for atts, now use_atts
-        self.config.atts = self.config.use_atts
+        # self.config.atts = self.config.use_atts
+        self.config.atts = self.config.bands
 
-        trainkeys = list(training_data.keys())
-        npdata = np.array(list(training_data.values()))
+        # old way: tpz reads in all data by default, comment out and replace with just needed cols
+        # trainkeys = list(training_data.keys())
+        # npdata = np.array(list(training_data.values()))
+        trainkeys = self.config.bands + self.config.err_bands
+        trainkeys.append(self.config.redshift_col)
+        print(trainkeys)
+        print("STOP")
+        ncols = len(trainkeys)
+        nvals = len(training_data[self.config.redshift_col])
+        npdata = np.zeros([ncols, nvals])
+        for ii, key in enumerate(trainkeys):
+            npdata[ii] = training_data[key]
 
-        for key in self.config.use_atts:  # pragma: no cover
+        for key in self.config.atts:  # pragma: no cover
             if key not in trainkeys:
                 raise KeyError(f"attribute {key} not found in input data!")
 
@@ -202,7 +215,7 @@ class TPZliteInformer(CatInformer):
 
         # construct the attribute dictionary
         train_att_dict = make_index_dict(self.config.err_dict, trainkeys)
-        traindata = data.catalog(self.config, npdata.T, trainkeys, self.config.use_atts, train_att_dict)
+        traindata = data.catalog(self.config, npdata.T, trainkeys, self.config.atts, train_att_dict)
         #####
         # make random data
         # So make_random takes the error columns and just adds Gaussian scatter to the input (or 0.00005 if no error supplied)
@@ -290,7 +303,7 @@ class TPZliteInformer(CatInformer):
         if self._rank == 0:
             self.model = dict(trainkeys=trainkeys,
                               treedict=treedict,
-                              use_atts=self.config.use_atts,
+                              use_atts=self.config.atts,
                               zmin=self.config.zmin,
                               zmax=self.config.zmax,
                               nzbins=self.config.nzbins,
