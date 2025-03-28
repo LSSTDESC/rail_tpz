@@ -125,16 +125,14 @@ class TPZliteInformer(CatInformer):
                           seed=Param(int, 8758, msg="random seed"),
                           # use_atts=Param(list, def_train_atts,
                           #               msg="attributes to use in training trees"),
-                          err_dict=Param(dict, def_err_dict, msg="dictionary that contains the columns that will be used to \
-                                         predict as the keys and the errors associated with that column as the values. \
-                                         If a column does not havea an associated error its value shoule be `None`"),
+                          err_dict=SHARED_PARAMS,
                           nrandom=Param(int, 8, msg="number of random bootstrap samples of training data to create"),
                           ntrees=Param(int, 5, msg="number of trees to create"),
                           minleaf=Param(int, 5, msg="minimum number in terminal leaf"),
                           natt=Param(int, 3, msg="number of attributes to split for TPZ"),
                           sigmafactor=Param(float, 3.0, msg="Gaussian smoothing with kernel Sigma1*Resolution"),
                           rmsfactor=Param(float, 0.02, msg="RMS for zconf calculation"),
-                          tree_strategy=Param(str, "native", msg="which decision tree function to use when constructing the forest, \
+                          tree_strategy=Param(str, "sklearn", msg="which decision tree function to use when constructing the forest, \
                                               valid choices are 'native' or 'sklearn'.  If 'native', use the trees written for TPZ,\
                                               if 'sklearn' then use sklearn's DecisionTreeRegressor")
                           )
