@@ -125,16 +125,14 @@ class TPZliteInformer(CatInformer):
                           seed=Param(int, 8758, msg="random seed"),
                           # use_atts=Param(list, def_train_atts,
                           #               msg="attributes to use in training trees"),
-                          err_dict=Param(dict, def_err_dict, msg="dictionary that contains the columns that will be used to \
-                                         predict as the keys and the errors associated with that column as the values. \
-                                         If a column does not havea an associated error its value shoule be `None`"),
+                          err_dict=SHARED_PARAMS,
                           nrandom=Param(int, 8, msg="number of random bootstrap samples of training data to create"),
                           ntrees=Param(int, 5, msg="number of trees to create"),
                           minleaf=Param(int, 5, msg="minimum number in terminal leaf"),
                           natt=Param(int, 3, msg="number of attributes to split for TPZ"),
                           sigmafactor=Param(float, 3.0, msg="Gaussian smoothing with kernel Sigma1*Resolution"),
                           rmsfactor=Param(float, 0.02, msg="RMS for zconf calculation"),
-                          tree_strategy=Param(str, "native", msg="which decision tree function to use when constructing the forest, \
+                          tree_strategy=Param(str, "sklearn", msg="which decision tree function to use when constructing the forest, \
                                               valid choices are 'native' or 'sklearn'.  If 'native', use the trees written for TPZ,\
                                               if 'sklearn' then use sklearn's DecisionTreeRegressor")
                           )
@@ -336,11 +334,11 @@ class TPZliteEstimator(CatEstimator):
     """
     name = "TPZliteEstimator"
     config_options = CatEstimator.config_options.copy()
-    config_options.update(nondetect_val=SHARED_PARAMS,
-                          mag_limits=SHARED_PARAMS,
-                          test_err_dict=Param(dict, def_err_dict, msg="dictionary that contains the columns that will be used to \
-                                         predict as the keys and the errors associated with that column as the values. \
-                                         If a column does not havea an associated error its value shoule be `None`"))
+    config_options.update(
+        nondetect_val=SHARED_PARAMS,
+        mag_limits=SHARED_PARAMS,
+        err_dict=SHARED_PARAMS,
+    )
 
     def __init__(self, args, **kwargs):
         """Constructor, build the CatEstimator, then do BPZ specific setup
@@ -360,7 +358,7 @@ class TPZliteEstimator(CatEstimator):
         testkeys = list(inputdata.keys())
 
         # replace non-detects with limiting mag and mag_err with 1.0
-        for bandname, errname in self.config.test_err_dict.items():
+        for bandname, errname in self.config.err_dict.items():
             if bandname == self.attPars.redshift_col:
                 continue
             if np.isnan(self.config.nondetect_val):  # pragma: no cover
@@ -375,7 +373,7 @@ class TPZliteEstimator(CatEstimator):
             inputdata[errname][detmask] = 1.0
 
         # make dictionary of attributes and error columns
-        test_att_dict = make_index_dict(self.config.test_err_dict, testkeys)
+        test_att_dict = make_index_dict(self.config.err_dict, testkeys)
         zfine, zfine2, resz, resz2, wzin = analysis.get_zbins(self.attPars)
         zfine2 = zfine2[wzin]
         ntot = int(self.attPars.nrandom * self.attPars.ntrees)
