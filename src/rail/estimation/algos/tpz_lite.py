@@ -425,4 +425,4 @@ class TPZliteEstimator(CatEstimator):
         zmode = qp_dstn.mode(grid=zgrid)
 
         qp_dstn.set_ancil(dict(zmode=zmode))
-        self._do_chunk_output(qp_dstn, start, end, first)
+        self._do_chunk_output(qp_dstn, start, end, first, data=inputdata)
