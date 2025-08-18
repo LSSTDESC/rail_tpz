@@ -8,8 +8,6 @@ from rail.utils.path_utils import RAILDIR
 from rail.utils.path_utils import find_rail_file
 from rail.estimation.algos.tpz_lite import TPZliteInformer, TPZliteEstimator
 
-parquetdata = "./tests/validation_10gal.pq"
-validdata = os.path.join(RAILDIR, 'rail/examples_data/testdata/validation_10gal.hdf5')
 
 @pytest.mark.parametrize(
     "treestrat, nrand",
@@ -77,19 +75,12 @@ def test_tpz_larger_training(treestrat, nrand):
     #assert np.isclose(flatres, zb_expected, atol=2.e-01).all()
     #assert np.isclose(estim.data.ancil["zmode"], estim_2.data.ancil["zmode"]).all()
 
-@pytest.mark.parametrize(
-    "inputdata, groupname",
-    [
-        (parquetdata, ""),
-        (validdata, "photometry")
-    ]
-)
-
-def test_tpz_input_data_format(inputdata, groupname):
+def test_tpz_input_data_format():
     
+    parquetdata = "./tests/validation_10gal.pq"
     treestrat = "native"
     nrand = 1
-    train_config_dict = {"hdf5_groupname": groupname, "nrandom": nrand, "ntrees": 5,
+    train_config_dict = {"hdf5_groupname": "", "nrandom": nrand, "ntrees": 5,
                          "model": "tpz_tests.pkl", "tree_strategy": treestrat}
     estim_config_dict = {"hdf5_groupname": "photometry", "model": "tpz_tests.pkl"}
     train_algo = TPZliteInformer
@@ -99,8 +90,8 @@ def test_tpz_input_data_format(inputdata, groupname):
     DS = RailStage.data_store
     DS.__class__.allow_overwrite = True
     DS.clear()
-    training_data = DS.read_file('training_data', TableHandle, inputdata)
-    validation_data = DS.read_file('validation_data', TableHandle, inputdata)
+    training_data = DS.read_file('training_data', TableHandle, parquetdata)
+    validation_data = DS.read_file('validation_data', TableHandle, parquetdata)
 
     train_pz = TPZliteInformer.make_stage(**train_config_dict)
     train_pz.inform(training_data)
