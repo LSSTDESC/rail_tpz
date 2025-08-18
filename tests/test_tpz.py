@@ -78,7 +78,7 @@ def test_tpz_larger_training(treestrat, nrand):
 def test_tpz_input_data_format():
     
     parquetdata = "./tests/validation_10gal.pq"
-    treestrat = "native"
+    treestrat = "sklearn"
     nrand = 1
     train_config_dict = {"hdf5_groupname": "", "nrandom": nrand, "ntrees": 5,
                          "model": "tpz_tests.pkl", "tree_strategy": treestrat}

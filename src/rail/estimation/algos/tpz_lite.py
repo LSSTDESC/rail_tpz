@@ -162,7 +162,7 @@ class TPZliteInformer(CatInformer):
 
         # convert training data format to numpy dictionary
         if tables_io.types.table_type(training_data) != 1:
-            training_data = self._convert_table_table_format(training_data, out_fmt_str="numpyDict")
+            training_data = self._convert_table_format(training_data, out_fmt_str="numpyDict")
 
         # replace non-detects with limiting mag and mag_err with 1.0
         for bandname, errname in self.config.err_dict.items():
@@ -365,7 +365,7 @@ class TPZliteEstimator(CatEstimator):
 
         # convert data format to numpy dictionary
         if tables_io.types.table_type(inputdata) != 1:
-            inputdata = self._convert_table_table_format(inputdata, "numpyDict")
+            inputdata = self._convert_table_format(inputdata, "numpyDict")
 
         # replace non-detects with limiting mag and mag_err with 1.0
         for bandname, errname in self.config.err_dict.items():
