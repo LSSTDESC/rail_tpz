@@ -8,6 +8,7 @@ from rail.utils.path_utils import RAILDIR
 from rail.utils.path_utils import find_rail_file
 from rail.estimation.algos.tpz_lite import TPZliteInformer, TPZliteEstimator
 
+
 @pytest.mark.parametrize(
     "treestrat, nrand",
     [("native", 2),
@@ -73,3 +74,29 @@ def test_tpz_larger_training(treestrat, nrand):
     flatres = estim.data.ancil["zmode"].flatten()
     #assert np.isclose(flatres, zb_expected, atol=2.e-01).all()
     #assert np.isclose(estim.data.ancil["zmode"], estim_2.data.ancil["zmode"]).all()
+
+def test_tpz_input_data_format():
+    
+    parquetdata = "./tests/validation_10gal.pq"
+    treestrat = "sklearn"
+    nrand = 1
+    train_config_dict = {"hdf5_groupname": "", "nrandom": nrand, "ntrees": 5,
+                         "model": "tpz_tests.pkl", "tree_strategy": treestrat}
+    estim_config_dict = {"hdf5_groupname": "photometry", "model": "tpz_tests.pkl"}
+    train_algo = TPZliteInformer
+    pz_algo = TPZliteEstimator
+    zb_expected = np.array([0.16, 1.24, 0.35, 0.16, 0.23, 0.17, 0.22, 0.27, 0.29, 0.13])
+    
+    DS = RailStage.data_store
+    DS.__class__.allow_overwrite = True
+    DS.clear()
+    training_data = DS.read_file('training_data', TableHandle, parquetdata)
+    validation_data = DS.read_file('validation_data', TableHandle, parquetdata)
+
+    train_pz = TPZliteInformer.make_stage(**train_config_dict)
+    train_pz.inform(training_data)
+
+    pz = TPZliteEstimator.make_stage(name="TPZ_lite", **estim_config_dict)
+    estim = pz.estimate(validation_data)
+
+    os.remove(pz.get_output(pz.get_aliased_tag('output'), final_name=True))

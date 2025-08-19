@@ -26,6 +26,8 @@ from .mlz_utils import utils_mlz
 from .mlz_utils import analysis
 from .ml_codes import TPZ
 
+import tables_io
+
 # value copied from ceci/ceci/stage.py, it is set there but not carried around
 MPI_PARALLEL = "mpi"
 
@@ -157,6 +159,10 @@ class TPZliteInformer(CatInformer):
             training_data = self.get_data("input")[self.config.hdf5_groupname]
         else:  # pragma: no cover
             training_data = self.get_data("input")
+
+        # convert training data format to numpy dictionary
+        if tables_io.types.table_type(training_data) != 1:
+            training_data = self._convert_table_format(training_data, out_fmt_str="numpyDict")
 
         # replace non-detects with limiting mag and mag_err with 1.0
         for bandname, errname in self.config.err_dict.items():
@@ -356,6 +362,10 @@ class TPZliteEstimator(CatEstimator):
         """
 
         testkeys = list(inputdata.keys())
+
+        # convert data format to numpy dictionary
+        if tables_io.types.table_type(inputdata) != 1:
+            inputdata = self._convert_table_format(inputdata, "numpyDict")
 
         # replace non-detects with limiting mag and mag_err with 1.0
         for bandname, errname in self.config.err_dict.items():
