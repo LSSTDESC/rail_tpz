@@ -3,19 +3,20 @@
 .. moduleauthor:: Matias Carrasco Kind
 .. modified a bit by Sam Schmidt to work with RAIL Sept 2023
 """
-__author__ = 'Matias Carrasco Kind'
 
-import numpy as np
-import random
+__author__ = "Matias Carrasco Kind"
+
 import copy
+import random
 import sys
 
+import numpy as np
 from astropy.io import fits as pf
 
 from . import utils_mlz
 
 
-def read_catalog(filename, myrank=0, check='no', get_ng='no', L_1=0, L_2=-1, A_T=''):
+def read_catalog(filename, myrank=0, check="no", get_ng="no", L_1=0, L_2=-1, A_T=""):
     """
     Read the catalog, either for training or testing
     currently accepting ascii tables, numpy tables
@@ -32,43 +33,48 @@ def read_catalog(filename, myrank=0, check='no', get_ng='no', L_1=0, L_2=-1, A_T
     :return: The whole catalog
     :rtype: float array
     """
-    if filename[-3:] == 'npy':
-        filein = np.load(filename) #, allow_pickle=True)
-        if check == 'yes': filein = filein[0:200]
-        if get_ng == 'yes': return len(filein)
-        if L_2 != -1: filein = filein[L_1:L_2]
-    elif filename[-4:] == 'fits':
-        GH = pf.open(filename, mode='readonly', memmap=False)
-        if get_ng == 'yes':
-            if check == 'yes':
+    if filename[-3:] == "npy":
+        filein = np.load(filename)  # , allow_pickle=True)
+        if check == "yes":
+            filein = filein[0:200]
+        if get_ng == "yes":
+            return len(filein)
+        if L_2 != -1:
+            filein = filein[L_1:L_2]
+    elif filename[-4:] == "fits":
+        GH = pf.open(filename, mode="readonly", memmap=False)
+        if get_ng == "yes":
+            if check == "yes":
                 GH.close()
                 return 200
-            ngt = GH[1].header['NAXIS2']  # it assumed is present, TODO: check automatically
+            ngt = GH[1].header[
+                "NAXIS2"
+            ]  # it assumed is present, TODO: check automatically
             GH.close()
             return ngt
         if L_2 > -1:
             Ta = GH[1].data[L_1:L_2]
         else:
-            if check == 'no':
+            if check == "no":
                 Ta = GH[1].data
             else:
                 Ta = GH[1].data[0:200]
-        if A_T != '':
+        if A_T != "":
             col_index = []
             klist = []
             for k in A_T.keys():
-                if A_T[k]['ind'] >= 0:
-                    col_index.append(A_T[k]['ind'])
+                if A_T[k]["ind"] >= 0:
+                    col_index.append(A_T[k]["ind"])
                     klist.append(k)
-                if A_T[k]['eind'] >= 0:
-                    col_index.append(A_T[k]['eind'])
+                if A_T[k]["eind"] >= 0:
+                    col_index.append(A_T[k]["eind"])
             filein = np.zeros((len(Ta), max(col_index) + 1))
             for k in klist:
                 T_temp = Ta.field(k)
-                filein[:, A_T[k]['ind']] = T_temp
-                if A_T[k]['eind'] >= 0:
-                    T_temp = Ta.field('e' + k)
-                    filein[:, A_T[k]['eind']] = T_temp
+                filein[:, A_T[k]["ind"]] = T_temp
+                if A_T[k]["eind"] >= 0:
+                    T_temp = Ta.field("e" + k)
+                    filein[:, A_T[k]["eind"]] = T_temp
         else:
             filein = np.array(Ta.tolist())
         GH.close()
@@ -77,16 +83,22 @@ def read_catalog(filename, myrank=0, check='no', get_ng='no', L_1=0, L_2=-1, A_T
             del GH[1].data
         except:
             pass
-    elif filename[-3:] == 'csv':
-        filein = np.loadtxt(filename, delimiter=',')
-        if check == 'yes': filein = filein[0:200]
-        if get_ng == 'yes': return len(filein)
-        if L_2 != -1: filein = filein[L_1:L_2]
+    elif filename[-3:] == "csv":
+        filein = np.loadtxt(filename, delimiter=",")
+        if check == "yes":
+            filein = filein[0:200]
+        if get_ng == "yes":
+            return len(filein)
+        if L_2 != -1:
+            filein = filein[L_1:L_2]
     else:
         filein = np.loadtxt(filename)
-        if check == 'yes': filein = filein[0:200]
-        if get_ng == 'yes': return len(filein)
-        if L_2 != -1: filein = filein[L_1:L_2]
+        if check == "yes":
+            filein = filein[0:200]
+        if get_ng == "yes":
+            return len(filein)
+        if L_2 != -1:
+            filein = filein[L_1:L_2]
     return filein
 
 
@@ -105,20 +117,22 @@ def create_random_realizations(AT, F, N, keyatt, rng=None):
     :param str keyatt: Attribute name to be predicted or classifed
     :return: Returns  an array with random realizations
     """
-    if rng==None:
+    if rng == None:
         rng = np.random.default_rng()
     BigCat = {}
     total = len(F)
     for key in AT.keys():
-        if (key != keyatt): BigCat[key] = np.zeros((total, N))
+        if key != keyatt:
+            BigCat[key] = np.zeros((total, N))
     for i in range(total):
         for k in BigCat.keys():
-            sigg = F[i][AT[k]['eind']]
+            sigg = F[i][AT[k]["eind"]]
             sigg = max(0.001, sigg)
             sigg = min(sigg, 0.3)
-            if AT[k]['eind'] == -1: sigg = 0.00005
+            if AT[k]["eind"] == -1:
+                sigg = 0.00005
             # BigCat[k][i] = np.random.normal(F[i][AT[k]['ind']], sigg, N)
-            BigCat[k][i] = rng.normal(F[i][AT[k]['ind']], sigg, N)
+            BigCat[k][i] = rng.normal(F[i][AT[k]["ind"]], sigg, N)
     return BigCat
 
 
@@ -142,15 +156,17 @@ def make_AT(cols, attributes, keyatt):
     AT = {}
     for nc in attributes:
         w = np.where(cols == nc)
-        AT[nc] = {'type': 'real'}
-    AT[keyatt] = {'type': 'real'}
+        AT[nc] = {"type": "real"}
+    AT[keyatt] = {"type": "real"}
     for c in AT.keys():
         j = np.where(cols == c)[0]
-        ej = np.where(cols == 'e' + c)[0]
-        if len(ej) == 0: ej = np.array([-1])
-        if len(j) == 0: j = np.array([-1])
-        AT[c]['ind'] = j[0]
-        AT[c]['eind'] = ej[0]
+        ej = np.where(cols == "e" + c)[0]
+        if len(ej) == 0:
+            ej = np.array([-1])
+        if len(j) == 0:
+            j = np.array([-1])
+        AT[c]["ind"] = j[0]
+        AT[c]["eind"] = ej[0]
     return AT
 
 
@@ -170,12 +186,12 @@ def bootstrap_index(N, SS):
     # return stat.randint.rvs(0,SS,size=N)
 
 
-
 ##############################
 # ####CATALOG CLASS
 ##############################
 
-class catalog():
+
+class catalog:
     """
     Creates a catalog instance for training or testing
 
@@ -189,17 +205,17 @@ class catalog():
         self.cols = datacols
         self.atts = use_atts
         # TEMPORARY HACK: REMOVE AT and just put in by hand!
-        #self.AT = make_AT(self.cols, self.atts, Pars.redshift_col)
+        # self.AT = make_AT(self.cols, self.atts, Pars.redshift_col)
         self.AT = att_dict
-        #self.cat = read_catalog(self.filename, check=Pars.checkonly, get_ng='no', L_1=L1, L_2=L2, A_T=self.AT)
+        # self.cat = read_catalog(self.filename, check=Pars.checkonly, get_ng='no', L_1=L1, L_2=L2, A_T=self.AT)
         self.cat = npdata
         # if L2 != -1: self.cat = self.cat[L1:L2]
         self.cat_or = copy.deepcopy(self.cat)
         self.nobj = len(self.cat)
         self.ndim = len(self.atts)
         self.has_random = False
-        self.oob = 'no'
-        if rng==None:
+        self.oob = "no"
+        if rng == None:
             self.rng = np.random.default_rng()
         else:
             self.rng = rng
@@ -228,7 +244,7 @@ class catalog():
         except AttributeError:
             return False
 
-    def get_XY(self, curr_at='all', bootstrap='no'):
+    def get_XY(self, curr_at="all", bootstrap="no"):
         """
         Creates X and Y methods based on catalog, using random realization or bootstrapping,
         after this both X and Y are loaded and ready to be used
@@ -238,27 +254,29 @@ class catalog():
         :return: Saves X, Y oob (and no-oob) data if required and original catalog
         """
         self.boot = bootstrap
-        if curr_at == 'all':
+        if curr_at == "all":
             self.curr_at = self.atts
         else:  # pragma: no cover
-            self.curr_at = curr_at['atts']
+            self.curr_at = curr_at["atts"]
         indx = []
         for key in self.curr_at:
-            indx.append(self.AT[key]['ind'])
+            indx.append(self.AT[key]["ind"])
         indx = np.array(indx)
         self.indx = indx
         self.X = self.cat[:, indx]
         nboot = len(self.X)
-        if self.oob == 'yes': self.Xoob = self.cat_oob[:, indx]
-        if self.boot == 'yes':
+        if self.oob == "yes":
+            self.Xoob = self.cat_oob[:, indx]
+        if self.boot == "yes":
             self.in_boot = bootstrap_index(nboot, nboot)
             self.X = self.X[self.in_boot]
-        if self.boot == 'no':
+        if self.boot == "no":
             self.in_boot = np.arange(nboot)
-        if self.AT[self.Pars.keyatt]['ind'] != -1:
-            self.Y = self.cat[:, self.AT[self.Pars.keyatt]['ind']]
-            if self.oob == 'yes': self.Yoob = self.cat_oob[:, self.AT[self.Pars.keyatt]['ind']]
-            if self.boot == 'yes':
+        if self.AT[self.Pars.keyatt]["ind"] != -1:
+            self.Y = self.cat[:, self.AT[self.Pars.keyatt]["ind"]]
+            if self.oob == "yes":
+                self.Yoob = self.cat_oob[:, self.AT[self.Pars.keyatt]["ind"]]
+            if self.boot == "yes":
                 self.Y = self.Y[self.in_boot]
         self.cat2 = copy.deepcopy(self.cat[self.in_boot])
 
@@ -268,9 +286,12 @@ class catalog():
         :param str outfileran: output file (not needed)
         :param int ntimes: taken from class Pars unless otherwise indicated
         """
-        if ntimes == -1: ntimes = int(self.Pars.nrandom)
+        if ntimes == -1:
+            ntimes = int(self.Pars.nrandom)
         # if outfileran == '': outfileran = self.Pars.randomcatname
-        self.BigRan = create_random_realizations(self.AT, self.cat, ntimes, self.Pars.keyatt, self.rng)
+        self.BigRan = create_random_realizations(
+            self.AT, self.cat, ntimes, self.Pars.keyatt, self.rng
+        )
         # remove the saving of the data
         # np.save(self.Pars.path_train + outfileran, self.BigRan)
         self.has_random = True
@@ -287,16 +308,18 @@ class catalog():
         self.cat = copy.deepcopy(self.cat_or)
         if i > 0:
             for k in self.AT.keys():
-                if k != self.Pars.keyatt: 
-                    self.cat[:, self.AT[k]['ind']] = self.BigRan[k][:, i]
+                if k != self.Pars.keyatt:
+                    self.cat[:, self.AT[k]["ind"]] = self.BigRan[k][:, i]
 
-    def oob_data(self, frac=0.):
+    def oob_data(self, frac=0.0):
         """
         Creates oob data and separates it from the no-oob data for further tests
         :param float frac: Fraction of the data to be separated, taken from class Pars (default is 1/3)
         """
-        if not self.has_X() or not self.has_Y(): print('ERROR2')
-        if frac == 0.: frac = self.Pars.oobfraction
+        if not self.has_X() or not self.has_Y():
+            print("ERROR2")
+        if frac == 0.0:
+            frac = self.Pars.oobfraction
         self.noob = int(self.nobj * frac)
         self.oob_index = random.sample(range(self.nobj), self.noob)
         index_all = np.arange(self.nobj)
@@ -309,10 +332,11 @@ class catalog():
         self.Y = self.Y[self.no_oob_index]
         self.oob_index_or = self.in_boot[self.oob_index]
 
-    def oob_data_cat(self, frac=0.):
-        self.oob = 'yes'
+    def oob_data_cat(self, frac=0.0):
+        self.oob = "yes"
         self.cat = copy.deepcopy(self.cat_or)
-        if frac == 0.: frac = self.Pars.oobfraction
+        if frac == 0.0:
+            frac = self.Pars.oobfraction
         self.noob = int(self.nobj * frac)
         self.oob_index = random.sample(range(self.nobj), self.noob)
         index_all = np.arange(self.nobj)
@@ -333,8 +357,7 @@ class catalog():
         self.ndim_sample = nsample
         r_dim = random.sample(self.atts, nsample)
         self.dict_dim = {}
-        self.dict_dim['atts'] = r_dim
+        self.dict_dim["atts"] = r_dim
         for k in r_dim:
-            self.dict_dim[k] = self.AT[k]['ind']
+            self.dict_dim[k] = self.AT[k]["ind"]
         return self.dict_dim
-

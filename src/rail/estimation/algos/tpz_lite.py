@@ -16,17 +16,14 @@ Missing from full TPZ:
 
 import numpy as np
 import qp
-from sklearn.tree import DecisionTreeRegressor
-from ceci.config import StageParameter as Param
-from rail.estimation.estimator import CatEstimator, CatInformer
-from rail.core.common_params import SHARED_PARAMS
-
-from .mlz_utils import data
-from .mlz_utils import utils_mlz
-from .mlz_utils import analysis
-from .ml_codes import TPZ
-
 import tables_io
+from ceci.config import StageParameter as Param
+from rail.core.common_params import SHARED_PARAMS
+from rail.estimation.estimator import CatEstimator, CatInformer
+from sklearn.tree import DecisionTreeRegressor
+
+from .ml_codes import TPZ
+from .mlz_utils import analysis, data, utils_mlz
 
 # value copied from ceci/ceci/stage.py, it is set there but not carried around
 MPI_PARALLEL = "mpi"
@@ -52,7 +49,7 @@ MPI_PARALLEL = "mpi"
 # Nproc = size
 
 
-bands = ['u', 'g', 'r', 'i', 'z', 'y']
+bands = ["u", "g", "r", "i", "z", "y"]
 def_train_atts = []
 for band in bands:
     def_train_atts.append(f"mag_{band}_lsst")
@@ -114,46 +111,56 @@ class TPZliteInformer(CatInformer):
     final model i.e. if nrandom=3 and ntrees=5 then 15 total trees
     are trained and stored.
     """
+
     name = "TPZliteInformer"
     config_options = CatInformer.config_options.copy()
-    config_options.update(zmin=SHARED_PARAMS,
-                          zmax=SHARED_PARAMS,
-                          nzbins=SHARED_PARAMS,
-                          nondetect_val=SHARED_PARAMS,
-                          mag_limits=SHARED_PARAMS,
-                          bands=SHARED_PARAMS,
-                          err_bands=SHARED_PARAMS,
-                          redshift_col=SHARED_PARAMS,
-                          seed=Param(int, 8758, msg="random seed"),
-                          # use_atts=Param(list, def_train_atts,
-                          #               msg="attributes to use in training trees"),
-                          err_dict=SHARED_PARAMS,
-                          nrandom=Param(int, 8, msg="number of random bootstrap samples of training data to create"),
-                          ntrees=Param(int, 5, msg="number of trees to create"),
-                          minleaf=Param(int, 5, msg="minimum number in terminal leaf"),
-                          natt=Param(int, 3, msg="number of attributes to split for TPZ"),
-                          sigmafactor=Param(float, 3.0, msg="Gaussian smoothing with kernel Sigma1*Resolution"),
-                          rmsfactor=Param(float, 0.02, msg="RMS for zconf calculation"),
-                          tree_strategy=Param(str, "sklearn", msg="which decision tree function to use when constructing the forest, \
+    config_options.update(
+        zmin=SHARED_PARAMS,
+        zmax=SHARED_PARAMS,
+        nzbins=SHARED_PARAMS,
+        nondetect_val=SHARED_PARAMS,
+        mag_limits=SHARED_PARAMS,
+        bands=SHARED_PARAMS,
+        err_bands=SHARED_PARAMS,
+        redshift_col=SHARED_PARAMS,
+        seed=Param(int, 8758, msg="random seed"),
+        # use_atts=Param(list, def_train_atts,
+        #               msg="attributes to use in training trees"),
+        err_dict=SHARED_PARAMS,
+        nrandom=Param(
+            int, 8, msg="number of random bootstrap samples of training data to create"
+        ),
+        ntrees=Param(int, 5, msg="number of trees to create"),
+        minleaf=Param(int, 5, msg="minimum number in terminal leaf"),
+        natt=Param(int, 3, msg="number of attributes to split for TPZ"),
+        sigmafactor=Param(
+            float, 3.0, msg="Gaussian smoothing with kernel Sigma1*Resolution"
+        ),
+        rmsfactor=Param(float, 0.02, msg="RMS for zconf calculation"),
+        tree_strategy=Param(
+            str,
+            "sklearn",
+            msg="which decision tree function to use when constructing the forest, \
                                               valid choices are 'native' or 'sklearn'.  If 'native', use the trees written for TPZ,\
-                                              if 'sklearn' then use sklearn's DecisionTreeRegressor")
-                          )
+                                              if 'sklearn' then use sklearn's DecisionTreeRegressor",
+        ),
+    )
 
     def __init__(self, args, **kwargs):
-        """Init function, init config stuff
-        """
+        """Init function, init config stuff"""
         super().__init__(args, **kwargs)
         self.szs = None
         self.treedata = None
 
     def run(self):
-        """compute the best fit prior parameters
-        """
+        """compute the best fit prior parameters"""
         rng = np.random.default_rng(seed=self.config.seed)
         if self._parallel == MPI_PARALLEL:
             self._comm.Barrier()
         if self._rank == 0:
-            print(f"self._parallel is {self._parallel}, number of processors we will use is {self._size}")
+            print(
+                f"self._parallel is {self._parallel}, number of processors we will use is {self._size}"
+            )
 
         if self.config.hdf5_groupname:
             training_data = self.get_data("input")[self.config.hdf5_groupname]
@@ -162,7 +169,9 @@ class TPZliteInformer(CatInformer):
 
         # convert training data format to numpy dictionary
         if tables_io.types.table_type(training_data) != 1:
-            training_data = self._convert_table_format(training_data, out_fmt_str="numpyDict")
+            training_data = self._convert_table_format(
+                training_data, out_fmt_str="numpyDict"
+            )
 
         # replace non-detects with limiting mag and mag_err with 1.0
         for bandname, errname in self.config.err_dict.items():
@@ -181,7 +190,9 @@ class TPZliteInformer(CatInformer):
 
         valid_strategies = ["sklearn", "native"]
         if self.config.tree_strategy not in valid_strategies:  # pragma: no cover
-            raise ValueError(f"value of {self.config.tree_strategy} not valid! Valid values for tree_strategy are 'native' or 'sklearn'")
+            raise ValueError(
+                f"value of {self.config.tree_strategy} not valid! Valid values for tree_strategy are 'native' or 'sklearn'"
+            )
         if self.config.tree_strategy == "sklearn" and self._rank == 0:
             print("using sklearn decision trees")
         if self.config.tree_strategy == "native" and self._rank == 0:
@@ -215,11 +226,15 @@ class TPZliteInformer(CatInformer):
         # ngal = len(training_data[self.config.ref_band])
 
         if self.config.redshift_col not in training_data.keys():  # pragma: no cover
-            raise KeyError(f"redshift column {self.config.redshift_col} not found in input data!")
+            raise KeyError(
+                f"redshift column {self.config.redshift_col} not found in input data!"
+            )
 
         # construct the attribute dictionary
         train_att_dict = make_index_dict(self.config.err_dict, trainkeys)
-        traindata = data.catalog(self.config, npdata.T, trainkeys, self.config.atts, train_att_dict)
+        traindata = data.catalog(
+            self.config, npdata.T, trainkeys, self.config.atts, train_att_dict
+        )
         #####
         # make random data
         # So make_random takes the error columns and just adds Gaussian scatter to the input (or 0.00005 if no error supplied)
@@ -247,7 +262,9 @@ class TPZliteInformer(CatInformer):
 
         ntot = int(self.config.nrandom * self.config.ntrees)
         if self._rank == 0:
-            print(f"making a total of {ntot} trees for {self.config.nrandom} random realizations * {self.config.ntrees} bootstraps")
+            print(
+                f"making a total of {ntot} trees for {self.config.nrandom} random realizations * {self.config.ntrees} bootstraps"
+            )
 
         zfine, zfine2, resz, resz2, wzin = analysis.get_zbins(self.config)
         zfine2 = zfine2[wzin]
@@ -273,18 +290,25 @@ class TPZliteInformer(CatInformer):
                 ir = kss // int(self.config.ntrees)
                 if ir != 0:
                     traindata.newcat(ir)
-            DD = 'all'
+            DD = "all"
 
-            traindata.get_XY(bootstrap='yes', curr_at=DD)
+            traindata.get_XY(bootstrap="yes", curr_at=DD)
             if self.config.tree_strategy == "native":
-                T = TPZ.Rtree(traindata.X, traindata.Y, forest='yes',
-                              minleaf=int(self.config.minleaf), mstar=int(self.config.natt),
-                              dict_dim=DD)
+                T = TPZ.Rtree(
+                    traindata.X,
+                    traindata.Y,
+                    forest="yes",
+                    minleaf=int(self.config.minleaf),
+                    mstar=int(self.config.natt),
+                    dict_dim=DD,
+                )
             elif self.config.tree_strategy == "sklearn":
                 randx = rng.integers(low=0, high=25000, size=1)[0]
-                T = DecisionTreeRegressor(random_state=randx,
-                                          min_samples_leaf=self.config.minleaf,
-                                          max_features=int(self.config.natt))
+                T = DecisionTreeRegressor(
+                    random_state=randx,
+                    min_samples_leaf=self.config.minleaf,
+                    max_features=int(self.config.natt),
+                )
                 T.fit(traindata.X, traindata.Y)
             else:  # pragma: no cover  already tested above
                 raise ValueError("invalid value for tree_strategy")
@@ -305,24 +329,25 @@ class TPZliteInformer(CatInformer):
         if self.parallel == MPI_PARALLEL:
             self._comm.Barrier()
         if self._rank == 0:
-            self.model = dict(trainkeys=trainkeys,
-                              treedict=treedict,
-                              use_atts=self.config.atts,
-                              zmin=self.config.zmin,
-                              zmax=self.config.zmax,
-                              nzbins=self.config.nzbins,
-                              redshift_col=self.config.redshift_col,
-                              att_dict=train_att_dict,
-                              keyatt=self.config.keyatt,
-                              nrandom=self.config.nrandom,
-                              ntrees=self.config.ntrees,
-                              minleaf=self.config.minleaf,
-                              natt=self.config.natt,
-                              sigmafactor=self.config.sigmafactor,
-                              bands=self.config.bands,
-                              rmsfactor=self.config.rmsfactor,
-                              tree_strategy=self.config.tree_strategy
-                              )
+            self.model = dict(
+                trainkeys=trainkeys,
+                treedict=treedict,
+                use_atts=self.config.atts,
+                zmin=self.config.zmin,
+                zmax=self.config.zmax,
+                nzbins=self.config.nzbins,
+                redshift_col=self.config.redshift_col,
+                att_dict=train_att_dict,
+                keyatt=self.config.keyatt,
+                nrandom=self.config.nrandom,
+                ntrees=self.config.ntrees,
+                minleaf=self.config.minleaf,
+                natt=self.config.natt,
+                sigmafactor=self.config.sigmafactor,
+                bands=self.config.bands,
+                rmsfactor=self.config.rmsfactor,
+                tree_strategy=self.config.tree_strategy,
+            )
             self.add_data("model", self.model)
 
 
@@ -338,6 +363,7 @@ class TPZliteEstimator(CatEstimator):
     TPZliteInformer, and data that has all of the same columns and
     column names as used by that stage!
     """
+
     name = "TPZliteEstimator"
     config_options = CatEstimator.config_options.copy()
     config_options.update(
@@ -347,8 +373,7 @@ class TPZliteEstimator(CatEstimator):
     )
 
     def __init__(self, args, **kwargs):
-        """Constructor, build the CatEstimator, then do BPZ specific setup
-        """
+        """Constructor, build the CatEstimator, then do BPZ specific setup"""
         super().__init__(args, **kwargs)
 
     def open_model(self, **kwargs):
@@ -391,7 +416,9 @@ class TPZliteEstimator(CatEstimator):
         Ng_temp = np.array(list(inputdata.values()))
         # Ng = np.array(Ng_temp, 'i')
 
-        Test = data.catalog(self.attPars, Ng_temp.T, testkeys, self.attPars.use_atts, test_att_dict)
+        Test = data.catalog(
+            self.attPars, Ng_temp.T, testkeys, self.attPars.use_atts, test_att_dict
+        )
         Test.get_XY()
 
         if Test.has_Y():
@@ -418,7 +445,7 @@ class TPZliteEstimator(CatEstimator):
                     temp = S.get_vals(Test.X[i])
                 else:
                     temp = S.predict(Test.X[i].reshape(1, -1))
-                if temp[0] != -1.:
+                if temp[0] != -1.0:
                     BP0raw[i, :] += Test_S.get_hist(temp)
 
         for k in range(Test.nobj):
@@ -427,9 +454,7 @@ class TPZliteEstimator(CatEstimator):
             BP0[k, :] = pdf_phot
         del BP0raw, yvals
 
-        zgrid = np.linspace(self.attPars.zmin,
-                            self.attPars.zmax,
-                            self.attPars.nzbins)
+        zgrid = np.linspace(self.attPars.zmin, self.attPars.zmax, self.attPars.nzbins)
 
         qp_dstn = qp.Ensemble(qp.interp, data=dict(xvals=zfine2, yvals=BP0))
         zmode = qp_dstn.mode(grid=zgrid)
