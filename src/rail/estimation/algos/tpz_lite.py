@@ -113,6 +113,7 @@ class TPZliteInformer(CatInformer):
     """
 
     name = "TPZliteInformer"
+    entrypoint_function = "inform"  # the user-facing science function for this class
     config_options = CatInformer.config_options.copy()
     config_options.update(
         zmin=SHARED_PARAMS,
@@ -365,6 +366,7 @@ class TPZliteEstimator(CatEstimator):
     """
 
     name = "TPZliteEstimator"
+    entrypoint_function = "estimate"  # the user-facing science function for this class
     config_options = CatEstimator.config_options.copy()
     config_options.update(
         nondetect_val=SHARED_PARAMS,
