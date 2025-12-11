@@ -15,7 +15,7 @@ from rail.estimation.algos.tpz_lite import TPZliteInformer, TPZliteEstimator
      ("sklearn", 1)]
 )
 def test_tpz_larger_training(treestrat, nrand):
-    train_config_dict = {"hdf5_groupname": "photometry", "nrandom": nrand, "ntrees": 5,
+    train_config_dict = {"hdf5_groupname": "photometry", "n_random": nrand, "n_trees": 5,
                          "model": "tpz_tests.pkl", "tree_strategy": treestrat}
     estim_config_dict = {"hdf5_groupname": "photometry", "model": "tpz_tests.pkl"}
     train_algo = TPZliteInformer
@@ -80,7 +80,7 @@ def test_tpz_input_data_format():
     parquetdata = "./tests/validation_10gal.pq"
     treestrat = "sklearn"
     nrand = 1
-    train_config_dict = {"hdf5_groupname": "", "nrandom": nrand, "ntrees": 5,
+    train_config_dict = {"hdf5_groupname": "", "n_random": nrand, "n_trees": 5,
                          "model": "tpz_tests.pkl", "tree_strategy": treestrat}
     estim_config_dict = {"hdf5_groupname": "photometry", "model": "tpz_tests.pkl"}
     train_algo = TPZliteInformer
