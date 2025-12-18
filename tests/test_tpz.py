@@ -30,11 +30,9 @@ def test_tpz_larger_training(treestrat, nrand):
     validdata = os.path.join(
         RAILDIR, "rail/examples_data/testdata/validation_10gal.hdf5"
     )
-    DS = RailStage.data_store
-    DS.__class__.allow_overwrite = True
-    DS.clear()
-    training_data = DS.read_file("training_data", TableHandle, traindata)
-    validation_data = DS.read_file("validation_data", TableHandle, validdata)
+
+    training_data = TableHandle("training_data", path=traindata)
+    validation_data = TableHandle("validation_data", path=validdata)
 
     train_pz = TPZliteInformer.make_stage(**train_config_dict)
     train_pz.inform(training_data)
@@ -100,11 +98,8 @@ def test_tpz_input_data_format():
     pz_algo = TPZliteEstimator
     zb_expected = np.array([0.16, 1.24, 0.35, 0.16, 0.23, 0.17, 0.22, 0.27, 0.29, 0.13])
 
-    DS = RailStage.data_store
-    DS.__class__.allow_overwrite = True
-    DS.clear()
-    training_data = DS.read_file("training_data", TableHandle, parquetdata)
-    validation_data = DS.read_file("validation_data", TableHandle, parquetdata)
+    training_data = TableHandle("training_data", path=parquetdata)
+    validation_data = TableHandle("validation_data", path=parquetdata)
 
     train_pz = TPZliteInformer.make_stage(**train_config_dict)
     train_pz.inform(training_data)
