@@ -99,7 +99,7 @@ class TPZliteInformer(CatInformer):
     data to train up a set of decision trees that are then stored
     as a pickled model file for use by the Estimator stage.
 
-    ntrees controls how many bootstrap realizations are created from a
+    n_trees controls how many bootstrap realizations are created from a
     single catalog realization to train one tree.
     nransom controls how many catalog realizations are created. Each
     random catalog consists of adding Gaussian scatter to each attribute
@@ -107,8 +107,8 @@ class TPZliteInformer(CatInformer):
     -1 then a small error of 0.00005 is hardcoded into TPZ. The key
     attribute is not included in this random catalog creation.
 
-    So, a total of nrandom*ntrees trees are trained and stored in the
-    final model i.e. if nrandom=3 and ntrees=5 then 15 total trees
+    So, a total of n_random*n_trees trees are trained and stored in the
+    final model i.e. if n_random=3 and n_trees=5 then 15 total trees
     are trained and stored.
     """
 
@@ -129,12 +129,12 @@ class TPZliteInformer(CatInformer):
         # use_atts=Param(list, def_train_atts,
         #               msg="attributes to use in training trees"),
         err_dict=SHARED_PARAMS,
-        nrandom=Param(
+        n_random=Param(
             int, 8, msg="number of random bootstrap samples of training data to create"
         ),
-        ntrees=Param(int, 5, msg="number of trees to create"),
-        minleaf=Param(int, 5, msg="minimum number in terminal leaf"),
-        natt=Param(int, 3, msg="number of attributes to split for TPZ"),
+        n_trees=Param(int, 5, msg="number of trees to create"),
+        min_leaf=Param(int, 5, msg="minimum number in terminal leaf"),
+        n_att=Param(int, 3, msg="number of attributes to split for TPZ"),
         sigmafactor=Param(
             float, 3.0, msg="Gaussian smoothing with kernel Sigma1*Resolution"
         ),
@@ -240,12 +240,12 @@ class TPZliteInformer(CatInformer):
         #####
         # make random data
         # So make_random takes the error columns and just adds Gaussian scatter to the input (or 0.00005 if no error supplied)
-        # it saves `nrandom` copies of this in a dictionary for each attribute for each galaxy
+        # it saves `n_random` copies of this in a dictionary for each attribute for each galaxy
         # not how I would have done things, but we're keeping it to try to duplicate MLZ's code exactly.
-        if self.config.nrandom > 1:
+        if self.config.n_random > 1:
             if self._rank == 0:
-                print(f"creating {self.config.nrandom} random realizations...")
-                traindata.make_random(ntimes=int(self.config.nrandom))
+                print(f"creating {self.config.n_random} random realizations...")
+                traindata.make_random(ntimes=int(self.config.n_random))
                 temprandos = traindata.BigRan
             else:  # pragma: no cover
                 temprandos = None
@@ -255,17 +255,17 @@ class TPZliteInformer(CatInformer):
         # Matias writes out randoms from make_random for rank=0, then reads them all back in from file so that all ranks have access,
         # that seems slow so, instead, let's just assign them here (after broadcasting to all):
         if self._parallel == MPI_PARALLEL:
-            if self.config.nrandom > 1:
+            if self.config.n_random > 1:
                 temprandos = self._comm.bcast(temprandos, root=0)
-        if self.config.nrandom > 1:
+        if self.config.n_random > 1:
             traindata.BigRan = temprandos
         if self._parallel == MPI_PARALLEL:
             self._comm.Barrier()
 
-        ntot = int(self.config.nrandom * self.config.ntrees)
+        ntot = int(self.config.n_random * self.config.n_trees)
         if self._rank == 0:
             print(
-                f"making a total of {ntot} trees for {self.config.nrandom} random realizations * {self.config.ntrees} bootstraps"
+                f"making a total of {ntot} trees for {self.config.n_random} random realizations * {self.config.n_trees} bootstraps"
             )
 
         zfine, zfine2, resz, resz2, wzin = analysis.get_zbins(self.config)
@@ -287,9 +287,9 @@ class TPZliteInformer(CatInformer):
             self._comm.Barrier()
         # copy some stuff from the runMLZ script:
         for kss in range(s0, s1):
-            print(f"making {kss+1} of {ntot}...")
-            if self.config.nrandom > 1:
-                ir = kss // int(self.config.ntrees)
+            print(f"making {kss + 1} of {ntot}...")
+            if self.config.n_random > 1:
+                ir = kss // int(self.config.n_trees)
                 if ir != 0:
                     traindata.newcat(ir)
             DD = "all"
@@ -300,16 +300,16 @@ class TPZliteInformer(CatInformer):
                     traindata.X,
                     traindata.Y,
                     forest="yes",
-                    minleaf=int(self.config.minleaf),
-                    mstar=int(self.config.natt),
+                    minleaf=int(self.config.min_leaf),
+                    mstar=int(self.config.n_att),
                     dict_dim=DD,
                 )
             elif self.config.tree_strategy == "sklearn":
                 randx = rng.integers(low=0, high=25000, size=1)[0]
                 T = DecisionTreeRegressor(
                     random_state=randx,
-                    min_samples_leaf=self.config.minleaf,
-                    max_features=int(self.config.natt),
+                    min_samples_leaf=self.config.min_leaf,
+                    max_features=int(self.config.n_att),
                 )
                 T.fit(traindata.X, traindata.Y)
             else:  # pragma: no cover  already tested above
@@ -341,10 +341,10 @@ class TPZliteInformer(CatInformer):
                 redshift_col=self.config.redshift_col,
                 att_dict=train_att_dict,
                 keyatt=self.config.keyatt,
-                nrandom=self.config.nrandom,
-                ntrees=self.config.ntrees,
-                minleaf=self.config.minleaf,
-                natt=self.config.natt,
+                n_random=self.config.n_random,
+                n_trees=self.config.n_trees,
+                min_leaf=self.config.min_leaf,
+                n_att=self.config.n_att,
                 sigmafactor=self.config.sigmafactor,
                 bands=self.config.bands,
                 rmsfactor=self.config.rmsfactor,
@@ -415,7 +415,7 @@ class TPZliteEstimator(CatEstimator):
         test_att_dict = make_index_dict(self.config.err_dict, testkeys)
         zfine, zfine2, resz, resz2, wzin = analysis.get_zbins(self.attPars)
         zfine2 = zfine2[wzin]
-        ntot = int(self.attPars.nrandom * self.attPars.ntrees)
+        ntot = int(self.attPars.n_random * self.attPars.n_trees)
 
         Ng_temp = np.array(list(inputdata.values()))
         # Ng = np.array(Ng_temp, 'i')

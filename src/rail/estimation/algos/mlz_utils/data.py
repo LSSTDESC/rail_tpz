@@ -287,7 +287,7 @@ class catalog:
         :param int ntimes: taken from class Pars unless otherwise indicated
         """
         if ntimes == -1:
-            ntimes = int(self.Pars.nrandom)
+            ntimes = int(self.Pars.n_random)
         # if outfileran == '': outfileran = self.Pars.randomcatname
         self.BigRan = create_random_realizations(
             self.AT, self.cat, ntimes, self.Pars.keyatt, self.rng
