@@ -2,19 +2,22 @@
 .. module:: utils_mlz
 .. moduleauthor:: Matias Carrasco Kind
 """
-__author__ = 'Matias Carrasco Kind'
-import numpy as np
+
+__author__ = "Matias Carrasco Kind"
+import os
+import sys
 import time
-import sys, os
-from scipy.interpolate import interp1d as spl
+
+import numpy as np
 from scipy.integrate import quad
+from scipy.interpolate import interp1d as spl
 
 try:
     from mpi4py import MPI
 
-    PLL = 'MPI'
+    PLL = "MPI"
 except:
-    PLL = 'SERIAL'
+    PLL = "SERIAL"
 
 
 def zconf_dist(conf, nbins):
@@ -26,7 +29,7 @@ def zconf_dist(conf, nbins):
     :return: zConf dist, bins
     :rtype: float,float
     """
-    bins = np.linspace(0., 1, nbins)
+    bins = np.linspace(0.0, 1, nbins)
     s_conf = np.sort(conf)
     z_conf = np.zeros(len(bins))
     for i in range(len(bins)):
@@ -42,7 +45,7 @@ def get_probs(z, pdf, z1, z2):
     Ndz = int((z2 - z1) / dz)
     A = 0
     for i in range(Ndz):
-        A += dz * PP((z1) + dz / 2. + dz * i)
+        A += dz * PP((z1) + dz / 2.0 + dz * i)
     return A / dzo
 
 
@@ -55,7 +58,7 @@ def get_prob_Nz(z, pdf, zbins):
     Nzt = np.zeros(len(zbins) - 1)
     for j in range(len(Nzt)):
         for i in range(Ndz):
-            Nzt[j] += dz * PP((zbins[j]) + dz / 2. + dz * i)
+            Nzt[j] += dz * PP((zbins[j]) + dz / 2.0 + dz * i)
     return Nzt / dzo
 
 
@@ -85,7 +88,7 @@ def compute_error(z, pdf, zv):
 
 def compute_error2(z, pdf, zv):
     L1 = 0.0001
-    L2 = (max(z) - min(z)) / 2.
+    L2 = (max(z) - min(z)) / 2.0
     PP = spl(z, pdf, bounds_error=False, fill_value=0.0)
     dz = z[1] - z[0]
     eps = 0.05
@@ -100,10 +103,10 @@ def compute_error2(z, pdf, zv):
         Lreturn = LM
         if area > 0.68:
             L2 = LM
-            LM = (L1 + L2) / 2.
+            LM = (L1 + L2) / 2.0
         else:
             L1 = LM
-            LM = (L1 + L2) / 2.
+            LM = (L1 + L2) / 2.0
     return Lreturn
 
 
@@ -115,7 +118,8 @@ def compute_error3(z, pdf, zv):
     j = 0
     i2 = ib + 1
     i1 = ib
-    if sum(pdf) < 0.00001 : return 9.99
+    if sum(pdf) < 0.00001:
+        return 9.99
     while area <= 0.68:
         area1 = sum(pdf[i1:i2])
         e681 = dz * (i2 - i1)
@@ -125,7 +129,7 @@ def compute_error3(z, pdf, zv):
         area = sum(pdf[i1:i2])
         e68 = dz * (i2 - i1)
         ef = ((e68 - e681) / (area - area1)) * (0.68 - area1) + e681
-    return ef / 2.
+    return ef / 2.0
 
 
 def compute_zConf(z, pdf, zv, sigma):
@@ -140,15 +144,15 @@ def compute_zConf(z, pdf, zv, sigma):
     :return: zConf
     :rtype: float
     """
-    z1a = zv - sigma * (1. + zv)
-    z1b = zv + sigma * (1. + zv)
+    z1a = zv - sigma * (1.0 + zv)
+    z1b = zv + sigma * (1.0 + zv)
     zC1 = get_area(z, pdf, z1a, z1b)
     return zC1
 
 
 def compute_zConf2(z, pdf, zv, sigma):
-    z1a = zv - sigma * (1. + zv)
-    z1b = zv + sigma * (1. + zv)
+    z1a = zv - sigma * (1.0 + zv)
+    z1b = zv + sigma * (1.0 + zv)
     ib1 = np.argmin(abs(z1a - z))
     ib2 = np.argmin(abs(z1b - z)) + 1
     return sum(pdf[ib1:ib2])
@@ -166,7 +170,8 @@ def get_limits(ntot, Nproc, rank):
     """
     jpproc = np.zeros(Nproc) + int(ntot / Nproc)
     for i in range(Nproc):
-        if (i < ntot % Nproc): jpproc[i] += 1
+        if i < ntot % Nproc:
+            jpproc[i] += 1
     jpproc = [int(x) for x in jpproc]
     st = rank
     st = np.sum(jpproc[:rank]) - 1

@@ -2,11 +2,14 @@
 .. module:: TPZ
 .. moduleauthor:: Matias Carrasco Kind
 """
-__author__ = 'Matias Carrasco Kind'
+
+__author__ = "Matias Carrasco Kind"
 
 import os
 import random as rn
+
 import numpy as np
+
 
 def split_point(data1, yvals, minleaf):
     """
@@ -59,7 +62,8 @@ def best_split(data_split, y_split, minleaf):
         vall[i] = vsplit
     minS = np.argmin(Sall)
     maxS = np.argmax(Sall)
-    if maxS == minS: return -1, 0., 0.
+    if maxS == minS:
+        return -1, 0.0, 0.0
     return minS, vall[minS], Sall[minS]
 
 
@@ -67,24 +71,27 @@ def I_d(y_vals, impurity, nclass):
     """
     Impurity function
     """
-    tot = len(y_vals) * 1.
-    if tot == 0.:
-        print('ERROR')
-        return -1.
-    Idd = 0.
-    if impurity == 'gini': 
-        Idd = 1.
-    if impurity == 'classE':
+    tot = len(y_vals) * 1.0
+    if tot == 0.0:
+        print("ERROR")
+        return -1.0
+    Idd = 0.0
+    if impurity == "gini":
+        Idd = 1.0
+    if impurity == "classE":
         fn0 = -0.1
     for n in nclass:
-        fn = np.sum(y_vals == n)/tot
-        if impurity == 'entropy':
-            if fn > 0.: Idd += -fn * np.log2(fn)
-        if impurity == 'gini': Idd -= fn * fn
-        if impurity == 'classE':
+        fn = np.sum(y_vals == n) / tot
+        if impurity == "entropy":
+            if fn > 0.0:
+                Idd += -fn * np.log2(fn)
+        if impurity == "gini":
+            Idd -= fn * fn
+        if impurity == "classE":
             mfn = np.max(fn0, fn)
             fn0 = fn
-    if impurity == 'classE': Idd = 1. - mfn
+    if impurity == "classE":
+        Idd = 1.0 - mfn
     return Idd
 
 
@@ -99,8 +106,8 @@ def gain(vals_x, vals_y, minleaf, impurity, nclass):
     vals_x = vals_x[sort_d]
     vals_y = vals_y[sort_d]
     u = np.unique(vals_x)
-    if len(u) == 1: 
-        return 0., u[0]
+    if len(u) == 1:
+        return 0.0, u[0]
 
     if len(u) <= minleaf:
         for ju in range(len(u) - 1):
@@ -108,8 +115,14 @@ def gain(vals_x, vals_y, minleaf, impurity, nclass):
             nin = win + 1
             nsplit = nin
             nout = tot - nin
-            IGtemp = IG - (nin*I_d(vals_y[0:nin], impurity, nclass) +
-                           nout*I_d(vals_y[nin:], impurity, nclass))/tot
+            IGtemp = (
+                IG
+                - (
+                    nin * I_d(vals_y[0:nin], impurity, nclass)
+                    + nout * I_d(vals_y[nin:], impurity, nclass)
+                )
+                / tot
+            )
             if IGtemp > max_IG:
                 max_IG = IGtemp
                 nsplit = nin
@@ -121,8 +134,14 @@ def gain(vals_x, vals_y, minleaf, impurity, nclass):
     ntimes = int(tot - 2 * minleaf + 1)
     for i in range(ntimes):
         nout = tot - nin
-        IGtemp = IG - (nin*I_d(vals_y[0:nin], impurity, nclass) + 
-                       nout*I_d(vals_y[nin:], impurity, nclass))/tot
+        IGtemp = (
+            IG
+            - (
+                nin * I_d(vals_y[0:nin], impurity, nclass)
+                + nout * I_d(vals_y[nin:], impurity, nclass)
+            )
+            / tot
+        )
         if IGtemp > max_IG:
             max_IG = IGtemp
             nsplit = nin
@@ -143,13 +162,14 @@ def best_split_class(data_split, y_split, minleaf, impurity, nclass):
     maxIG = np.argmax(IGall)
     minIG = np.argmin(IGall)
     if maxIG == minIG:
-        return -1, 0., 0.
+        return -1, 0.0, 0.0
     return maxIG, vall[maxIG], IGall[maxIG]
+
 
 ############################################################
 
 
-class InsertNode():
+class InsertNode:
     """
     Add a node to a tree during the growing process
     """
@@ -164,13 +184,13 @@ class InsertNode():
         self.right = right
         self.is_L_leaf = False
         self.is_R_leaf = False
-        if type(self.left) == type(np.ones(1)): 
+        if type(self.left) == type(np.ones(1)):
             self.is_L_leaf = True
-        if type(self.right) == type(np.ones(1)): 
+        if type(self.right) == type(np.ones(1)):
             self.is_R_leaf = True
 
 
-class Ctree():
+class Ctree:
     """
     Creates a  classification tree class instance
 
@@ -191,8 +211,17 @@ class Ctree():
     :type dict_dim: dict
     """
 
-    def __init__(self, X, Y, minleaf=4, forest='yes', mstar=2, dict_dim='', 
-                 impurity='entropy', nclass=np.arange(2, dtype='int')):
+    def __init__(
+        self,
+        X,
+        Y,
+        minleaf=4,
+        forest="yes",
+        mstar=2,
+        dict_dim="",
+        impurity="entropy",
+        nclass=np.arange(2, dtype="int"),
+    ):
         self.dict_dim = dict_dim
         self.nclass = nclass
         self.xdim = np.shape(X)[1]
@@ -204,27 +233,33 @@ class Ctree():
                 return YD
             self.depth = depth
             all_D = np.arange(np.shape(XD)[1])
-            if forest == 'no':
+            if forest == "no":
                 myD = all_D
-            if forest == 'yes':
+            if forest == "yes":
                 myD = rn.sample(list(all_D), mstar)
 
-            if len(np.unique(YD)) == 1: return YD
-            #if len(unique(XD[:,0]))==1: return YD
-            td, sp, tvar = best_split_class(XD[:, myD], YD, minleaf, 
-                                            impurity, nclass)
-            if td == -1: 
+            if len(np.unique(YD)) == 1:
+                return YD
+            # if len(unique(XD[:,0]))==1: return YD
+            td, sp, tvar = best_split_class(XD[:, myD], YD, minleaf, impurity, nclass)
+            if td == -1:
                 return YD
 
             sd = myD[td]
             S = np.where(XD[:, sd] <= sp, 1, 0)
-            wL = np.where(S == 1.)[0]
-            wR = np.where(S == 0.)[0]
+            wL = np.where(S == 1.0)[0]
+            wR = np.where(S == 0.0)[0]
             NL = np.shape(wL)[0]
             NR = np.shape(wR)[0]
-            node = InsertNode(sd, sp, NL, NR, depth, 
-                              left=build(XD[wL], YD[wL], depth + 1),
-                              right=build(XD[wR], YD[wR], depth + 1))
+            node = InsertNode(
+                sd,
+                sp,
+                NL,
+                NR,
+                depth,
+                left=build(XD[wL], YD[wL], depth + 1),
+                right=build(XD[wR], YD[wR], depth + 1),
+            )
             return node
 
         self.root = build(X, Y, 0)
@@ -254,9 +289,9 @@ class Ctree():
         Same as :func:`Rtree.get_vals`
         """
         out = search(line, self.root)
-        if len(out) >= 1: 
+        if len(out) >= 1:
             return out
-        return np.array([-1.])
+        return np.array([-1.0])
 
     def print_branch(self, branch):
         """
@@ -264,47 +299,60 @@ class Ctree():
         """
         return Pb(self.root, branch)
 
-    def save_tree(self, itn=-1, fileout='TPZ', path=''):
+    def save_tree(self, itn=-1, fileout="TPZ", path=""):
         """
         Same as :func:`Rtree.save_tree`
         """
-        if path == '':
-            path = os.getcwd() + '/'
-        if not os.path.exists(path): 
-            os.system('mkdir -p ' + path)
+        if path == "":
+            path = os.getcwd() + "/"
+        if not os.path.exists(path):
+            os.system("mkdir -p " + path)
         if itn >= 0:
-            ff = '_%04d' % itn
+            ff = "_%04d" % itn
             fileout += ff
         np.save(path + fileout, self)
 
-    def plot_tree(self, itn=-1, fileout='TPZ', path='', save_png='no'):
+    def plot_tree(self, itn=-1, fileout="TPZ", path="", save_png="no"):
         """
         Same as :func:`Rtree.plot_tree`
         """
         import matplotlib.pyplot as plt
 
-        if path == '':
-            path = os.getcwd() + '/'
-        if not os.path.exists(path): 
-            os.system('mkdir -p ' + path)
+        if path == "":
+            path = os.getcwd() + "/"
+        if not os.path.exists(path):
+            os.system("mkdir -p " + path)
         if itn >= 0:
-            ff = '_%04d' % itn
+            ff = "_%04d" % itn
             fileout += ff
-        fdot3 = open(fileout + '.dot', 'w')
-        fdot3.write('digraph \" TPZ Tree \" { \n')
-        fdot3.write('''size="15,80" ;\n ''')
-        fdot3.write('''ratio=auto; \n ''')
-        fdot3.write('''overlap=false; \n ''')
-        fdot3.write('''spline=true; \n ''')
-        fdot3.write('''sep=0.02; \n ''')
-        fdot3.write('''bgcolor=white; \n ''')
-        fdot3.write('''node [shape=circle, style=filled]; \n ''')
-        fdot3.write('''edge [arrowhead=none, color=black, penwidth=0.4]; \n''')
-        colors = np.array(['purple', 'blue', 'green', 'magenta', 'brown', 
-                           'orange', 'yellow', 'aquamarine', 'cyan', 'lemonchiffon'])
-        shapes = np.array(['circle', 'square', 'triangle', 
-                           'polygon', 'diamond', 'star'])
-        colors_class = np.array(['black', 'red', 'gray', 'black', 'red', 'gray'])
+        fdot3 = open(fileout + ".dot", "w")
+        fdot3.write('digraph " TPZ Tree " { \n')
+        fdot3.write("""size="15,80" ;\n """)
+        fdot3.write("""ratio=auto; \n """)
+        fdot3.write("""overlap=false; \n """)
+        fdot3.write("""spline=true; \n """)
+        fdot3.write("""sep=0.02; \n """)
+        fdot3.write("""bgcolor=white; \n """)
+        fdot3.write("""node [shape=circle, style=filled]; \n """)
+        fdot3.write("""edge [arrowhead=none, color=black, penwidth=0.4]; \n""")
+        colors = np.array(
+            [
+                "purple",
+                "blue",
+                "green",
+                "magenta",
+                "brown",
+                "orange",
+                "yellow",
+                "aquamarine",
+                "cyan",
+                "lemonchiffon",
+            ]
+        )
+        shapes = np.array(
+            ["circle", "square", "triangle", "polygon", "diamond", "star"]
+        )
+        colors_class = np.array(["black", "red", "gray", "black", "red", "gray"])
         Leaf = self.leaves()
         Leaf_dim = np.array(self.leaves_dim())
         node_dict = {}
@@ -317,64 +365,86 @@ class Ctree():
                 if not n1 in node_dict:
                     n2 = Lnum[jl + 1]
                     node_dict[n1] = [n2]
-                    node1 = 'node_' + str(n1)
-                    node2 = 'node_' + str(n2)
-                    if jl == len(Lnum) - 2: 
-                        node2 = 'Leaf_' + str(n2)
-                    line = node1 + ' -> ' + node2 + ';\n'
+                    node1 = "node_" + str(n1)
+                    node2 = "node_" + str(n2)
+                    if jl == len(Lnum) - 2:
+                        node2 = "Leaf_" + str(n2)
+                    line = node1 + " -> " + node2 + ";\n"
                     fdot3.write(line)
-                    line = node1 + '''[label="", height=0.3, fillcolor=''' + colors[ldim[jl]] + '] ; \n'
+                    line = (
+                        node1
+                        + """[label="", height=0.3, fillcolor="""
+                        + colors[ldim[jl]]
+                        + "] ; \n"
+                    )
                     fdot3.write(line)
                     if jl == len(Lnum) - 2:
-                        line = node2 + '''[shape=''' + shapes[
-                            Lclass] + ''',label="", height=0.1, fillcolor=''' + colors_class[Lclass] + '''] ; \n'''
+                        line = (
+                            node2
+                            + """[shape="""
+                            + shapes[Lclass]
+                            + """,label="", height=0.1, fillcolor="""
+                            + colors_class[Lclass]
+                            + """] ; \n"""
+                        )
                         fdot3.write(line)
                 else:
                     n2 = Lnum[jl + 1]
                     if not n2 in node_dict[n1]:
-                        node1 = 'node_' + str(n1)
+                        node1 = "node_" + str(n1)
                         node_dict[n1].append(n2)
-                        node2 = 'node_' + str(n2)
-                        if jl == len(Lnum) - 2: 
-                            node2 = 'Leaf_' + str(n2)
-                        line = node1 + ' -> ' + node2 + ';\n'
+                        node2 = "node_" + str(n2)
+                        if jl == len(Lnum) - 2:
+                            node2 = "Leaf_" + str(n2)
+                        line = node1 + " -> " + node2 + ";\n"
                         fdot3.write(line)
                         if jl == len(Lnum) - 2:
-                            line = node2 + '''[shape=''' + shapes[
-                                Lclass] + ''',label="", height=0.1, fillcolor=''' + colors_class[Lclass] + '''] ; \n'''
+                            line = (
+                                node2
+                                + """[shape="""
+                                + shapes[Lclass]
+                                + """,label="", height=0.1, fillcolor="""
+                                + colors_class[Lclass]
+                                + """] ; \n"""
+                            )
                             fdot3.write(line)
-        fdot3.write('}')
+        fdot3.write("}")
         fdot3.close()
-        os.system('neato -Tpng ' + fileout + '.dot > ' + fileout + '_neato.png')
-        os.system('dot -Tpng ' + fileout + '.dot > ' + fileout + '_dot.png')
-        Adot = plt.imread(fileout + '_dot.png')
-        Aneato = plt.imread(fileout + '_neato.png')
+        os.system("neato -Tpng " + fileout + ".dot > " + fileout + "_neato.png")
+        os.system("dot -Tpng " + fileout + ".dot > " + fileout + "_dot.png")
+        Adot = plt.imread(fileout + "_dot.png")
+        Aneato = plt.imread(fileout + "_neato.png")
         plt.figure(figsize=(14, 8))
         plt.imshow(Adot)
-        plt.axis('off')
+        plt.axis("off")
         plt.figure(figsize=(12, 12))
         plt.imshow(Aneato)
-        plt.axis('off')
-        plt.figure(figsize=(8, 2.), facecolor='white')
-        if self.dict_dim == '' or self.dict_dim == 'all':
+        plt.axis("off")
+        plt.figure(figsize=(8, 2.0), facecolor="white")
+        if self.dict_dim == "" or self.dict_dim == "all":
             for i in range(self.xdim):
                 plt.scatter(i, 1, s=250, c=colors[i])
-                plt.text(i, 0.5, str(i), ha='center', rotation='40')
+                plt.text(i, 0.5, str(i), ha="center", rotation="40")
         else:
             for ik in self.dict_dim.keys():
-                plt.scatter(self.dict_dim[ik]['ind'], 1, s=250, c=colors[self.dict_dim[ik]['ind']])
-                plt.text(self.dict_dim[ik]['ind'], 0.5, ik, ha='center', rotation='40')
+                plt.scatter(
+                    self.dict_dim[ik]["ind"],
+                    1,
+                    s=250,
+                    c=colors[self.dict_dim[ik]["ind"]],
+                )
+                plt.text(self.dict_dim[ik]["ind"], 0.5, ik, ha="center", rotation="40")
         plt.xlim(-1, self.xdim + 1)
         plt.ylim(0, 2)
-        plt.axis('off')
+        plt.axis("off")
         plt.show()
-        if save_png == 'no':
-            os.remove(fileout + '_neato.png')
-            os.remove(fileout + '_dot.png')
-            os.remove(fileout + '.dot')
+        if save_png == "no":
+            os.remove(fileout + "_neato.png")
+            os.remove(fileout + "_dot.png")
+            os.remove(fileout + ".dot")
 
 
-class Rtree():
+class Rtree:
     """
     Creates a  regression tree class instance
 
@@ -395,7 +465,7 @@ class Rtree():
 
     """
 
-    def __init__(self, X, Y, minleaf=4, forest='yes', mstar=2, dict_dim=''):
+    def __init__(self, X, Y, minleaf=4, forest="yes", mstar=2, dict_dim=""):
         self.dict_dim = dict_dim
         self.xdim = np.shape(X)[1]
         self.nobj = len(X)
@@ -406,22 +476,30 @@ class Rtree():
                 return YD
             self.depth = depth
             all_D = np.arange(np.shape(XD)[1])
-            if forest == 'no':
+            if forest == "no":
                 myD = all_D
-            if forest == 'yes':
+            if forest == "yes":
                 myD = rn.sample(list(all_D), mstar)
-            if len(np.unique(YD)) == 1: return YD
+            if len(np.unique(YD)) == 1:
+                return YD
             td, sp, tvar = best_split(XD[:, myD], YD, minleaf)
-            if td == -1: return YD
+            if td == -1:
+                return YD
             sd = myD[td]
             S = np.where(XD[:, sd] <= sp, 1, 0)
-            wL = np.where(S == 1.)[0]
-            wR = np.where(S == 0.)[0]
+            wL = np.where(S == 1.0)[0]
+            wR = np.where(S == 0.0)[0]
             NL = np.shape(wL)[0]
             NR = np.shape(wR)[0]
-            node = InsertNode(sd, sp, NL, NR, depth, 
-                              left=build(XD[wL], YD[wL], depth + 1),
-                              right=build(XD[wR], YD[wR], depth + 1))
+            node = InsertNode(
+                sd,
+                sp,
+                NL,
+                NR,
+                depth,
+                left=build(XD[wL], YD[wL], depth + 1),
+                right=build(XD[wR], YD[wR], depth + 1),
+            )
             return node
 
         self.root = build(X, Y, 0)
@@ -429,7 +507,7 @@ class Rtree():
     def leaves(self):
         """
         Return an array with all branches in string format
-        ex: ['L','R','L'] is a branch of depth 3 where L and R are the left 
+        ex: ['L','R','L'] is a branch of depth 3 where L and R are the left
         or right branches
 
         :returns: str -- Array of all branches in the tree
@@ -439,7 +517,7 @@ class Rtree():
 
     def leaves_dim(self):
         """
-        Returns an array of the used dimensions for all the the nodes on all 
+        Returns an array of the used dimensions for all the the nodes on all
         the branches
 
         :return: int -- Array of all the dimensions for each node on each branch
@@ -470,7 +548,7 @@ class Rtree():
         out = search(line, self.root)
         if len(out) >= 1:
             return out
-        return np.array([-1.])
+        return np.array([-1.0])
 
     def print_branch(self, branch):
         """
@@ -478,7 +556,7 @@ class Rtree():
         """
         return Pb(self.root, branch)
 
-    def save_tree(self, itn=-1, fileout='TPZ', path=''):
+    def save_tree(self, itn=-1, fileout="TPZ", path=""):
         """
         Saves the tree
 
@@ -486,16 +564,16 @@ class Rtree():
         :param str fileout: Name of output file
         :param str path: path for the output file
         """
-        if path == '':
-            path = os.getcwd() + '/'
-        if not os.path.exists(path): 
-            os.system('mkdir -p ' + path)
+        if path == "":
+            path = os.getcwd() + "/"
+        if not os.path.exists(path):
+            os.system("mkdir -p " + path)
         if itn >= 0:
-            ff = '_%04d' % itn
+            ff = "_%04d" % itn
             fileout += ff
         np.save(path + fileout, self)
 
-    def plot_tree(self, itn=-1, fileout='TPZ', path='', save_png='no'):
+    def plot_tree(self, itn=-1, fileout="TPZ", path="", save_png="no"):
         """
         Plot a tree using dot (Graphviz)
         Saves it into a png file by default
@@ -507,24 +585,37 @@ class Rtree():
         """
         import matplotlib.pyplot as plt
 
-        if path == '':
-            path = os.getcwd() + '/'
-        if not os.path.exists(path): os.system('mkdir -p ' + path)
+        if path == "":
+            path = os.getcwd() + "/"
+        if not os.path.exists(path):
+            os.system("mkdir -p " + path)
         if itn >= 0:
-            ff = '_%04d' % itn
+            ff = "_%04d" % itn
             fileout += ff
-        fdot3 = open(fileout + '.dot', 'w')
-        fdot3.write('digraph \" TPZ Tree \" { \n')
-        fdot3.write('''size="15,80" ;\n ''')
-        fdot3.write('''ratio=auto; \n ''')
-        fdot3.write('''overlap=false; \n ''')
-        fdot3.write('''spline=true; \n ''')
-        fdot3.write('''sep=0.02; \n ''')
-        fdot3.write('''bgcolor=white; \n ''')
-        fdot3.write('''node [shape=circle, style=filled]; \n ''')
-        fdot3.write('''edge [arrowhead=none, color=black, penwidth=0.4]; \n''')
-        colors = np.array(['purple', 'blue', 'green', 'magenta', 'brown', 
-                           'orange', 'yellow', 'aquamarine', 'cyan', 'lemonchiffon'])
+        fdot3 = open(fileout + ".dot", "w")
+        fdot3.write('digraph " TPZ Tree " { \n')
+        fdot3.write("""size="15,80" ;\n """)
+        fdot3.write("""ratio=auto; \n """)
+        fdot3.write("""overlap=false; \n """)
+        fdot3.write("""spline=true; \n """)
+        fdot3.write("""sep=0.02; \n """)
+        fdot3.write("""bgcolor=white; \n """)
+        fdot3.write("""node [shape=circle, style=filled]; \n """)
+        fdot3.write("""edge [arrowhead=none, color=black, penwidth=0.4]; \n""")
+        colors = np.array(
+            [
+                "purple",
+                "blue",
+                "green",
+                "magenta",
+                "brown",
+                "orange",
+                "yellow",
+                "aquamarine",
+                "cyan",
+                "lemonchiffon",
+            ]
+        )
         Leaf = self.leaves()
         Leaf_dim = np.array(self.leaves_dim())
         node_dict = {}
@@ -536,57 +627,74 @@ class Rtree():
                 if not n1 in node_dict:
                     n2 = Lnum[jl + 1]
                     node_dict[n1] = [n2]
-                    node1 = 'node_' + str(n1)
-                    node2 = 'node_' + str(n2)
-                    if jl == len(Lnum) - 2: node2 = 'Leaf_' + str(n2)
-                    line = node1 + ' -> ' + node2 + ';\n'
+                    node1 = "node_" + str(n1)
+                    node2 = "node_" + str(n2)
+                    if jl == len(Lnum) - 2:
+                        node2 = "Leaf_" + str(n2)
+                    line = node1 + " -> " + node2 + ";\n"
                     fdot3.write(line)
-                    line = node1 + '''[label="", height=0.3, fillcolor=''' + colors[ldim[jl]] + '] ; \n'
+                    line = (
+                        node1
+                        + """[label="", height=0.3, fillcolor="""
+                        + colors[ldim[jl]]
+                        + "] ; \n"
+                    )
                     fdot3.write(line)
                     if jl == len(Lnum) - 2:
-                        line = node2 + '''[label="", height=0.1, fillcolor=black] ; \n'''
+                        line = (
+                            node2 + """[label="", height=0.1, fillcolor=black] ; \n"""
+                        )
                         fdot3.write(line)
                 else:
                     n2 = Lnum[jl + 1]
                     if not n2 in node_dict[n1]:
-                        node1 = 'node_' + str(n1)
+                        node1 = "node_" + str(n1)
                         node_dict[n1].append(n2)
-                        node2 = 'node_' + str(n2)
-                        if jl == len(Lnum) - 2: node2 = 'Leaf_' + str(n2)
-                        line = node1 + ' -> ' + node2 + ';\n'
+                        node2 = "node_" + str(n2)
+                        if jl == len(Lnum) - 2:
+                            node2 = "Leaf_" + str(n2)
+                        line = node1 + " -> " + node2 + ";\n"
                         fdot3.write(line)
                         if jl == len(Lnum) - 2:
-                            line = node2 + '''[label="", height=0.1, fillcolor=black] ; \n'''
+                            line = (
+                                node2
+                                + """[label="", height=0.1, fillcolor=black] ; \n"""
+                            )
                             fdot3.write(line)
-        fdot3.write('}')
+        fdot3.write("}")
         fdot3.close()
-        os.system('neato -Tpng ' + fileout + '.dot > ' + fileout + '_neato.png')
-        os.system('dot -Tpng ' + fileout + '.dot > ' + fileout + '_dot.png')
-        Adot = plt.imread(fileout + '_dot.png')
-        Aneato = plt.imread(fileout + '_neato.png')
+        os.system("neato -Tpng " + fileout + ".dot > " + fileout + "_neato.png")
+        os.system("dot -Tpng " + fileout + ".dot > " + fileout + "_dot.png")
+        Adot = plt.imread(fileout + "_dot.png")
+        Aneato = plt.imread(fileout + "_neato.png")
         plt.figure(figsize=(14, 8))
         plt.imshow(Adot)
-        plt.axis('off')
+        plt.axis("off")
         plt.figure(figsize=(12, 12))
         plt.imshow(Aneato)
-        plt.axis('off')
-        plt.figure(figsize=(8, 2.), facecolor='white')
-        if self.dict_dim == '' or self.dict_dim == 'all':
+        plt.axis("off")
+        plt.figure(figsize=(8, 2.0), facecolor="white")
+        if self.dict_dim == "" or self.dict_dim == "all":
             for i in range(self.xdim):
                 plt.scatter(i, 1, s=250, c=colors[i])
-                plt.text(i, 0.5, str(i), ha='center', rotation='40')
+                plt.text(i, 0.5, str(i), ha="center", rotation="40")
         else:
             for ik in self.dict_dim.keys():
-                plt.scatter(self.dict_dim[ik]['ind'], 1, s=250, c=colors[self.dict_dim[ik]['ind']])
-                plt.text(self.dict_dim[ik]['ind'], 0.5, ik, ha='center', rotation='40')
+                plt.scatter(
+                    self.dict_dim[ik]["ind"],
+                    1,
+                    s=250,
+                    c=colors[self.dict_dim[ik]["ind"]],
+                )
+                plt.text(self.dict_dim[ik]["ind"], 0.5, ik, ha="center", rotation="40")
         plt.xlim(-1, self.xdim + 1)
         plt.ylim(0, 2)
-        plt.axis('off')
+        plt.axis("off")
         plt.show()
-        if save_png == 'no':
-            os.remove(fileout + '_neato.png')
-            os.remove(fileout + '_dot.png')
-            os.remove(fileout + '.dot')
+        if save_png == "no":
+            os.remove(fileout + "_neato.png")
+            os.remove(fileout + "_dot.png")
+            os.remove(fileout + ".dot")
 
 
 # EXTRA FUNCTIONS USED IN CLASS
@@ -594,13 +702,13 @@ def search_B(line, node, SB=[]):
     sd = node.dim
     pt = node.point
     if line[sd] < pt:
-        SB.append('L')
+        SB.append("L")
         if node.is_L_leaf:
             return SB
         else:
             return search_B(line, node.left, SB)
     else:
-        SB.append('R')
+        SB.append("R")
         if node.is_R_leaf:
             return SB
         else:
@@ -624,21 +732,21 @@ def search(line, node):
 
 def Ls(node, B=[], O=[]):
     if node.is_L_leaf:
-        B.append('L')
+        B.append("L")
         O.append(B)
         B = B[:-1]
     else:
-        B.append('L')
+        B.append("L")
         O = Ls(node.left, B)
-        B = B[:node.depth]
+        B = B[: node.depth]
     if node.is_R_leaf:
-        B.append('R')
+        B.append("R")
         O.append(B)
         B = B[:-2]
     else:
-        B.append('R')
+        B.append("R")
         O = Ls(node.right, B)
-        B = B[:node.depth]
+        B = B[: node.depth]
     return O
 
 
@@ -650,7 +758,7 @@ def Ls_dim(node, B=[], O=[]):
     else:
         B.append(node.dim)
         O = Ls_dim(node.left, B)
-        B = B[:node.depth]
+        B = B[: node.depth]
     if node.is_R_leaf:
         B.append(node.dim)
         O.append(B)
@@ -658,16 +766,16 @@ def Ls_dim(node, B=[], O=[]):
     else:
         B.append(node.dim)
         O = Ls_dim(node.right, B)
-        B = B[:node.depth]
+        B = B[: node.depth]
     return O
 
 
 def Pb(node, branch):
     temp = node
     for b in branch:
-        if b == 'L':
+        if b == "L":
             temp = temp.left
-        if b == 'R':
+        if b == "R":
             temp = temp.right
     return temp
 
@@ -675,8 +783,8 @@ def Pb(node, branch):
 def branch2num(branch):
     num = [0]
     for b in branch:
-        if b == 'L':
+        if b == "L":
             num.append(num[-1] * 2 + 1)
-        if b == 'R':
+        if b == "R":
             num.append(num[-1] * 2 + 2)
     return num
