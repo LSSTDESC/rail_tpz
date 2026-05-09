@@ -54,11 +54,6 @@ def_train_atts = []
 for band in bands:
     def_train_atts.append(f"mag_{band}_lsst")
 
-def_err_dict = {}
-for band in bands:
-    def_err_dict[f"mag_{band}_lsst"] = f"mag_err_{band}_lsst"
-def_err_dict["redshift"] = None
-
 
 def make_index_dict(inputdict, datacols):
     """
@@ -128,7 +123,7 @@ class TPZliteInformer(CatInformer):
         seed=Param(int, 8758, msg="random seed"),
         # use_atts=Param(list, def_train_atts,
         #               msg="attributes to use in training trees"),
-        err_dict=SHARED_PARAMS,
+        # err_dict=SHARED_PARAMS,
         n_random=Param(
             int, 8, msg="number of random bootstrap samples of training data to create"
         ),
@@ -175,8 +170,13 @@ class TPZliteInformer(CatInformer):
                 training_data, out_fmt_str="numpyDict"
             )
 
+        # construct error dictionary
+        err_dict = {f"{self.config.redshift_col}":None}
+        for band, err in zip(self.config.bands, self.config.err_bands):
+            err_dict[band] = err
+            
         # replace non-detects with limiting mag and mag_err with 1.0
-        for bandname, errname in self.config.err_dict.items():
+        for bandname, errname in err_dict.items():
             if bandname == self.config.redshift_col:
                 continue
             if np.isnan(self.config.nondetect_val):  # pragma: no cover
@@ -233,9 +233,7 @@ class TPZliteInformer(CatInformer):
             )
 
         # construct the attribute dictionary
-        input_dict = self.config.err_dict.copy()
-        input_dict.update(**{self.config.redshift_col:self.config.redshift_col})
-        train_att_dict = make_index_dict(input_dict, trainkeys)
+        train_att_dict = make_index_dict(err_dict, trainkeys)
         traindata = data.catalog(
             self.config, npdata.T, trainkeys, self.config.atts, train_att_dict
         )
@@ -373,9 +371,11 @@ class TPZliteEstimator(CatEstimator):
     interactive_function = "tpz_lite_estimator"
     config_options = CatEstimator.config_options.copy()
     config_options.update(
+        bands=SHARED_PARAMS,
+        err_bands=SHARED_PARAMS,
         nondetect_val=SHARED_PARAMS,
         mag_limits=SHARED_PARAMS,
-        err_dict=SHARED_PARAMS,
+        # err_dict=SHARED_PARAMS,
     )
 
     def __init__(self, args, **kwargs):
@@ -391,6 +391,9 @@ class TPZliteEstimator(CatEstimator):
         """
         Run TPZ on a chunk of data
         """
+        self.err_dict = {f"{self.config.redshift_col}":None}
+        for band, err in zip(self.config.bands, self.config.err_bands):
+            self.err_dict[band] = err
 
         testkeys = list(inputdata.keys())
 
@@ -399,7 +402,7 @@ class TPZliteEstimator(CatEstimator):
             inputdata = self._convert_table_format(inputdata, "numpyDict")
 
         # replace non-detects with limiting mag and mag_err with 1.0
-        for bandname, errname in self.config.err_dict.items():
+        for bandname, errname in self.err_dict.items():
             if bandname == self.attPars.redshift_col:
                 continue
             if np.isnan(self.config.nondetect_val):  # pragma: no cover
@@ -414,7 +417,7 @@ class TPZliteEstimator(CatEstimator):
             inputdata[errname][detmask] = 1.0
 
         # make dictionary of attributes and error columns
-        test_att_dict = make_index_dict(self.config.err_dict, testkeys)
+        test_att_dict = make_index_dict(self.err_dict, testkeys)
         zfine, zfine2, resz, resz2, wzin = analysis.get_zbins(self.attPars)
         zfine2 = zfine2[wzin]
         ntot = int(self.attPars.n_random * self.attPars.n_trees)
