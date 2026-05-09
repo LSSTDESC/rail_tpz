@@ -233,7 +233,9 @@ class TPZliteInformer(CatInformer):
             )
 
         # construct the attribute dictionary
-        train_att_dict = make_index_dict(self.config.err_dict, trainkeys)
+        input_dict = self.config.err_dict.copy()
+        input_dict.update(**{self.config.redshift_col:self.config.redshift_col})
+        train_att_dict = make_index_dict(input_dict, trainkeys)
         traindata = data.catalog(
             self.config, npdata.T, trainkeys, self.config.atts, train_att_dict
         )
